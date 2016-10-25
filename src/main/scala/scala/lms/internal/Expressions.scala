@@ -13,8 +13,25 @@ import java.lang.{StackTraceElement,Thread}
  * allows for common sub-expression elimination (CSE).
  *
  * @since 0.1
- */
-trait Expressions extends Utils {
+  */
+
+  abstract class Exp[+T:TypB] {
+    def tp: TypB[T @uncheckedVariance] = implicitly[TypB[T]] //invariant position! but hey...
+    def pos: List[SourceContext] = Nil
+  }
+
+
+  case class Const[+T:TypB](x: T) extends Exp[T]
+
+
+  case class Sym[+T:TypB](val id: Int) extends Exp[T] {
+    var sourceContexts: List[SourceContext] = Nil
+    override def pos = sourceContexts
+    def withPos(pos: List[SourceContext]) = { sourceContexts :::= pos; this }
+  }
+
+  case class Variable[+T](val e: Exp[Variable[T]]) // TODO: decide whether it should stay here ... FIXME: should be invariant
+
 
   abstract class TypB[T] {
     def typeArguments: List[TypB[_]]
@@ -40,60 +57,20 @@ trait Expressions extends Utils {
   }
 
 
-//  implicit def toTypB[T:Manifest]: TypB[T] =
-//    ManifestTypB(manifest[T])
+trait Expressions extends Utils {
+
+
   def toTypB[T:Manifest]: TypB[T] = {
     ManifestTypB(implicitly[Manifest[T]])
   }
 
-/*
-  trait TypB[T] {
-    def tpe: TypeRef
-/*    def typeArguments: List[TypB[_]] = tpe.args.map(x => new TypB[_] {
-      implicit val tpe = typeOf[x]
-    })*/
-    def <:<(that: TypB[_]): Boolean = tpe <:< that.tpe
-    def erasure = tpe.erasure
-    /*
-    def typeArguments: List[TypB[_]]
-    def arrayTypB: TypB[Array[T]]
-    def runtimeClass: java.lang.Class[_]
-    def <:<(that: TypB[_]): Boolean
-    def erasure: java.lang.Class[_]*/
-  }
-
-  implicit def toTypB[T:TypeTag]: TypB[T] =
-    new TypB[T] {
-      implicit val tpe = typeOf[T]
-    }
-
- */
-//  type TypB[+T] = TypeTag[T]
-
-
   def typ[T:TypB]: TypB[T] = implicitly[TypB[T]]
-
-
-  abstract class Exp[+T:TypB] { // constants/symbols (atomic)
-    def tp: TypB[T @uncheckedVariance] = implicitly[TypB[T]] //invariant position! but hey...
-    def pos: List[SourceContext] = Nil
-  }
-
-
-  case class Const[+T:TypB](x: T) extends Exp[T]
 
   implicit def unit[T:Manifest](x: T) = {
     implicit val t:TypB[T] = toTypB[T]
     Const(x)
   }
 
-  case class Sym[+T:TypB](val id: Int) extends Exp[T] {
-    var sourceContexts: List[SourceContext] = Nil
-    override def pos = sourceContexts
-    def withPos(pos: List[SourceContext]) = { sourceContexts :::= pos; this }
-  }
-
-  case class Variable[+T](val e: Exp[Variable[T]]) // TODO: decide whether it should stay here ... FIXME: should be invariant
 
   var nVars = 0
   def fresh[T:TypB]: Sym[T] = Sym[T] { nVars += 1;  if (nVars%1000 == 0) printlog("nVars="+nVars);  nVars -1 }

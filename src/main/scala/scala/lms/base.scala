@@ -4,11 +4,18 @@ import internal._
 import scala.annotation.implicitNotFound
 
 
+trait TypF[T] {
+  type U
+  def from(e:Exp[U]): T
+  def to(x:T):Exp[U]
+  def m: Manifest[U]
+}
+
+
 trait Base {
   // preliminaries
   @implicitNotFound("${T} is not a DSL type")
   type TypB[T]
-  type TypF[T]
   @implicitNotFound("${A} cannot be implicitly lifted to ${B}")
   type Lift[A,B]
   implicit def identLift[T:TypF]: Lift[T,T]
@@ -22,38 +29,15 @@ trait Base {
 
 trait BaseExp extends Base with Expressions {
 
-//  val codeGen: GenericCodeGen
-//  import codeBuilder.Exp
-
-  trait TypF[T] {
-    type U
-    def from(e:Exp[U]): T
-    def to(x:T):Exp[U]
-    def m: Manifest[U]
-  }
-
   trait Lift[A,B] {
     def to(x:A):B
   }
+
   implicit def identLift[T:TypF]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.to(x)
 
   def typ[T:TypF] = implicitly[TypF[T]]
-/*
-  def reflect[T:TypF](s:Any*):T = typ[T].from(codeBuilder.reflect(s:_*))
-  def ref[T:TypF](f: => T): Exp[T] = codeBuilder.reifyBlock(typ[T].to(f))
 
-  //case class Rewrite[T:Typ](a:T, b:T)
-
-  def lower[A:TypF,B:TypF,C:TypF](f: (A,B) => Rewrite[C]): Unit = {
-    val a = typ[A].from(Exp("?A"))
-    val b = typ[B].from(Exp("?B"))
-    val rw = codeBuilder.reifyPattern(f(a,b))
-    val u = typ[C].to(rw.a)
-    val v = typ[C].to(rw.b)
-    println("lower: " + u + "===>" + v)
-  }
- */
 }
 
 
@@ -85,6 +69,7 @@ trait DSL extends Base {
     def apply(x: Int): T
     def update(x: Int, y: T): Unit
   }
+
   type Array[T] <: ArrayOps[T]
   def NewArray[T:TypF](x: Int): Array[T]
   implicit def arrayTyp[T:TypF]: TypF[Array[T]]
@@ -140,7 +125,6 @@ trait Impl extends BaseExp with DSL {
 
   case class Array[T:TypF](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T] {
     val tp = typ[T]
-    //    implicit val tpm = tp.m //Manifest[tp.Internal] isn't implicit by default; so declare here or add explicitly below
     val e = bleh.asInstanceOf[Exp[scala.Array[tp.U]]]
     implicit val mf = tp.m
     def length = Int(ArrayLength(e))
