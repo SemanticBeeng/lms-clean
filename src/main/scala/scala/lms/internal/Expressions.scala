@@ -1,7 +1,6 @@
 package scala.lms
 package internal
 
-import scala.reflect.runtime.universe._
 import scala.reflect._
 import scala.reflect.SourceContext
 import scala.annotation.unchecked.uncheckedVariance
@@ -43,22 +42,8 @@ trait Expressions extends Utils {
 
 //  implicit def toTypB[T:Manifest]: TypB[T] =
 //    ManifestTypB(manifest[T])
-  def toTypB[T:TypeTag]: TypB[T] = {
-    val t = typeTag[T]
-    val mirror = t.mirror
-    def toManifestRec(t: Type): Manifest[_] = {
-      val clazz = ClassTag[T](mirror.runtimeClass(t)).runtimeClass
-      if (t.typeArgs.length == 1) {
-        val arg = toManifestRec(t.typeArgs.head)
-        ManifestFactory.classType(clazz, arg)
-      } else if (t.typeArgs.length > 1) {
-        val args = t.typeArgs.map(x => toManifestRec(x))
-        ManifestFactory.classType(clazz, args.head, args.tail: _*)
-      } else {
-        ManifestFactory.classType(clazz)
-      }
-    }
-    ManifestTypB(toManifestRec(t.tpe).asInstanceOf[Manifest[T]])
+  def toTypB[T:Manifest]: TypB[T] = {
+    ManifestTypB(implicitly[Manifest[T]])
   }
 
 /*
@@ -97,7 +82,7 @@ trait Expressions extends Utils {
 
   case class Const[+T:TypB](x: T) extends Exp[T]
 
-  implicit def unit[T:TypeTag](x: T) = {
+  implicit def unit[T:Manifest](x: T) = {
     implicit val t:TypB[T] = toTypB[T]
     Const(x)
   }
@@ -210,7 +195,7 @@ trait Expressions extends Utils {
     findOrCreateDefinitionExp(d, List(pos)) // TBD: return Const(()) if type is Unit??
   }
 
-  protected implicit def toAtomT[T:TypeTag](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
+  protected implicit def toAtomM[T:Manifest](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
     implicit val t:TypB[T] = toTypB[T]
     toAtom(d)
   }
