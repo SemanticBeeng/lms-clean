@@ -2,7 +2,11 @@ package scala.lms
 
 import internal._
 
-object Main extends App with Impl{
+object Main extends App {
+
+  val IR: DSL = new Impl {}
+
+  import IR._
 
   def run(z: Int) = {
     val x: Int = 5
