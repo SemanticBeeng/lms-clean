@@ -149,7 +149,7 @@ trait Impl extends BaseExp with DSL {
   def NewArray[T:TypF](x: Int): Array[T] = {
     val tp = typ[T]
     //    implicit val tpm = tp.m
-    val an: Exp[scala.Array[Any]]  = toAtom(ArrayNew(x.e))
+    val an: Exp[scala.Array[Any]]  = toAtomT(ArrayNew(x.e))
     Array(an)
   }
 

@@ -43,7 +43,7 @@ trait Expressions extends Utils {
 
 //  implicit def toTypB[T:Manifest]: TypB[T] =
 //    ManifestTypB(manifest[T])
-  implicit def toTypB[T:TypeTag]: TypB[T] = {
+  def toTypB[T:TypeTag]: TypB[T] = {
     val t = typeTag[T]
     val mirror = t.mirror
     def toManifestRec(t: Type): Manifest[_] = {
@@ -97,7 +97,10 @@ trait Expressions extends Utils {
 
   case class Const[+T:TypB](x: T) extends Exp[T]
 
-  implicit def unit[T:Manifest](x: T) = Const(x)
+  implicit def unit[T:TypeTag](x: T) = {
+    implicit val t:TypB[T] = toTypB[T]
+    Const(x)
+  }
 
   case class Sym[+T:TypB](val id: Int) extends Exp[T] {
     var sourceContexts: List[SourceContext] = Nil
@@ -205,6 +208,11 @@ trait Expressions extends Utils {
 
   protected implicit def toAtom[T:TypB](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
     findOrCreateDefinitionExp(d, List(pos)) // TBD: return Const(()) if type is Unit??
+  }
+
+  protected implicit def toAtomT[T:TypeTag](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
+    implicit val t:TypB[T] = toTypB[T]
+    toAtom(d)
   }
 
   object Def {
