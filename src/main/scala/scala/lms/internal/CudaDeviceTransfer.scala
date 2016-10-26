@@ -8,8 +8,8 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
   import IR._
 
 
-  def emitSendSlave(tp: TypB[_]): (String,String) = {
-    if (isPrimitiveTypBe(tp)) {
+  def emitSendSlave(tp: Manifest[_]): (String,String) = {
+    if (isPrimitiveManifeste(tp)) {
       val out = new StringBuilder
       val signature = "%s sendCuda_%s(%s sym)".format(remap(tp),mangledName(remap(tp)),remap(tp))
       out.append(signature + " {\n")
@@ -31,8 +31,8 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
     }
   }
 
-  def emitRecvSlave(tp: TypB[_]): (String,String) = {
-    if (isPrimitiveTypBe(tp)) {
+  def emitRecvSlave(tp: Manifest[_]): (String,String) = {
+    if (isPrimitiveManifeste(tp)) {
       val out = new StringBuilder
       val signature = "%s recvCuda_%s(%s *sym_dev)".format(remap(tp),mangledName(remap(tp)),remap(tp))
       out.append(signature + " {\n")
@@ -58,7 +58,7 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
   }
 /*
   def emitSendViewSlave(sym: Sym[Any]): (String,String) = {
-    if (isPrimitiveTypBe(sym.tp)) {
+    if (isPrimitiveManifeste(sym.tp)) {
       val out = new StringBuilder
       val signature = "%s sendViewCuda_%s(%s %s)".format(remap(sym.tp),quote(sym),remap(sym.tp),quote(sym))
       out.append(signature + " {\n")
@@ -73,7 +73,7 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
   }
 
   def emitRecvViewSlave(sym: Sym[Any]): (String,String) = {
-    if (isPrimitiveTypBe(sym.tp)) {
+    if (isPrimitiveManifeste(sym.tp)) {
       val out = new StringBuilder
       val signature = "%s recvViewCuda_%s(%s %s)".format(remap(sym.tp),quote(sym),remap(sym.tp),quote(sym))
       out.append(signature + " {\n")
@@ -87,8 +87,8 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
     }
   }
 */
-  def emitSendUpdateSlave(tp: TypB[_]): (String,String) = {
-    if(isPrimitiveTypBe(tp)) {
+  def emitSendUpdateSlave(tp: Manifest[_]): (String,String) = {
+    if(isPrimitiveManifeste(tp)) {
       val out = new StringBuilder
       val signature = "void sendUpdateCuda_%s(%s sym)".format(mangledName(remap(tp)),remap(tp))
       out.append(signature + " {\n")
@@ -109,8 +109,8 @@ trait CudaDeviceTransfer extends AbstractDeviceTransfer {
     }
   }
 
-  def emitRecvUpdateSlave(tp: TypB[_]): (String,String) = {
-    if(isPrimitiveTypBe(tp)) {
+  def emitRecvUpdateSlave(tp: Manifest[_]): (String,String) = {
+    if(isPrimitiveManifeste(tp)) {
       val out = new StringBuilder
       val signature = "void recvUpdateCuda_%s(%s sym)".format(mangledName(remap(tp)),remap(tp))
       out.append(signature + " {\n")

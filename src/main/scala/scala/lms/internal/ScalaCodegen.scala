@@ -21,7 +21,7 @@ trait ScalaCodegen extends GenericCodegen with Config {
       outFile.delete
   }
 
-  def emitSource[A:TypB](args: List[Sym[_]], body: Block[A], className: String, out: PrintWriter) = {
+  def emitSource[A:Manifest](args: List[Sym[_]], body: Block[A], className: String, out: PrintWriter) = {
 
     val sA = remap(typ[A])
 
@@ -55,7 +55,7 @@ trait ScalaCodegen extends GenericCodegen with Config {
     // empty by default. override to emit package or import declarations.
   }
 
-  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
     val kernelName = syms.map(quote).mkString("")
     stream.println("object kernel_" + kernelName + " {")
     stream.print("def apply(")
@@ -70,16 +70,16 @@ trait ScalaCodegen extends GenericCodegen with Config {
       stream.print(vars.map(v => quote(v) + ":" + "generated.scala.Ref[" + remap(v.tp) +"]").mkString(","))
     }
     if (resultIsVar){
-      stream.print("): " + "generated.scala.Ref[" + resultTypBe + "] = {")
+      stream.print("): " + "generated.scala.Ref[" + resultManifeste + "] = {")
     }
     else {
-      stream.print("): " + resultTypBe + " = {")
+      stream.print("): " + resultManifeste + " = {")
     }
 
     stream.println("")
   }
 
-  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
     val kernelName = syms.map(quote).mkString("")
     stream.println(kernelName)
     stream.println("}}")

@@ -20,7 +20,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
   var kernelInputVars: List[Sym[Any]] = Nil
   var kernelOutputs: List[Sym[Any]] = Nil
 
-  override def remap[A](m: TypB[A]) : String = {
+  override def remap[A](m: Manifest[A]) : String = {
     m.toString match {
       case "java.lang.String" => "string"
       case _ => super.remap(m)
@@ -29,10 +29,10 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
 
   // we treat string as a primitive type to prevent memory management on strings
   // strings are always stack allocated and freed automatically at the scope exit
-  override def isPrimitiveTypBe(tpe: String) : Boolean = {
+  override def isPrimitiveManifeste(tpe: String) : Boolean = {
     tpe match {
       case "string" => true
-      case _ => super.isPrimitiveTypBe(tpe)
+      case _ => super.isPrimitiveManifeste(tpe)
     }
   }
 
@@ -41,10 +41,10 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
     case _ => super.quote(x)
   }
 
-  override def isPrimitiveTypBe[A](m: TypB[A]) : Boolean = isPrimitiveTypBe(remap(m))
+  override def isPrimitiveManifeste[A](m: Manifest[A]) : Boolean = isPrimitiveManifeste(remap(m))
 
   override def emitValDef(sym: Sym[Any], rhs: String): Unit = {
-    if (!isVoidTypBe(sym.tp))
+    if (!isVoidManifeste(sym.tp))
       stream.println(remapWithRef(sym.tp) + quote(sym) + " = " + rhs + ";")
     else // we might still want the RHS for its effects
       stream.println(rhs + ";")
@@ -100,11 +100,11 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
     super.initializeGenerator(buildDir, args)
   }
 
-  def emitForwardDef[A:TypB](args: List[TypB[_]], functionName: String, out: PrintWriter) = {
+  def emitForwardDef[A:Manifest](args: List[Manifest[_]], functionName: String, out: PrintWriter) = {
     out.println(remap(typ[A])+" "+functionName+"("+args.map(a => remap(a)).mkString(", ")+");")
   }
 
-  def emitSource[A:TypB](args: List[Sym[_]], body: Block[A], functionName: String, out: PrintWriter) = {
+  def emitSource[A:Manifest](args: List[Sym[_]], body: Block[A], functionName: String, out: PrintWriter) = {
 
     val sA = remap(typ[A])
 
@@ -142,7 +142,7 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
 
   override def emitTransferFunctions() {
 
-    for ((tp,name) <- dsTypBesList) {
+    for ((tp,name) <- dsManifestesList) {
       try {
         // Emit input copy helper functions for object type inputs
         //TODO: For now just iterate over all possible hosts, but later we can pick one depending on the input target
@@ -200,12 +200,12 @@ trait CCodegen extends CLikeCodegen with CppHostTransfer {
 
   def kernelName = "kernel_" + kernelOutputs.map(quote).mkString("")
 
-  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
-    super.emitKernelHeader(syms, vals, vars, resultTypBe, resultIsVar, external)
+  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
+    super.emitKernelHeader(syms, vals, vars, resultManifeste, resultIsVar, external)
   }
 
-  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
-    super.emitKernelFooter(syms, vals, vars, resultTypBe, resultIsVar, external)
+  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
+    super.emitKernelFooter(syms, vals, vars, resultManifeste, resultIsVar, external)
   }
 
 }

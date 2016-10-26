@@ -36,7 +36,7 @@ trait OpenCLCodegen extends GPUCodegen with CppHostTransfer with OpenCLDeviceTra
     super.initializeGenerator(buildDir, args)
   }
 
-  def emitSource[A : TypB](args: List[Sym[_]], body: Block[A], className: String, out: PrintWriter) = {
+  def emitSource[A : Manifest](args: List[Sym[_]], body: Block[A], className: String, out: PrintWriter) = {
 
     val sB = typ[A].toString
 

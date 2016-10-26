@@ -34,9 +34,9 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
   private val ptrSymSet = HashSet[Sym[Any]]()
  
   // GPU currently does not use reference types
-  override def remapWithRef[A](m: TypB[A]): String = remap(m)
+  override def remapWithRef[A](m: Manifest[A]): String = remap(m)
 
-  protected def registerTempAlloc(sym:Sym[Any], tp:TypB[Any], size:Exp[Int]):String = {
+  protected def registerTempAlloc(sym:Sym[Any], tp:Manifest[Any], size:Exp[Int]):String = {
     metaData.temps prepend TempAlloc(quote(sym)+"_temp",remap(tp),quote(size))
     quote(sym) + "_temp"
   }
@@ -46,12 +46,12 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
   override def getMetaData: String = metaData.toString
   var metaData: GPUMetaData = null
 
-  final class LoopElem(val elemTypBe: String, val types: Map[String,String]) {
+  final class LoopElem(val elemManifeste: String, val types: Map[String,String]) {
     val funcs = new HashMap[String,List[String]]() // Mapping of function name to the argument list   
 
     override def toString: String = {
-      "{\"elemTypBe\":\"" + 
-      elemTypBe + 
+      "{\"elemManifeste\":\"" + 
+      elemManifeste + 
       "\",\"types\":" + 
       types.map(t => "\"" + t._1 + "\":\"" + t._2 + "\"").mkString("{",",","}") + 
       ",\"funcs\":" + 
@@ -72,14 +72,14 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
       out.append("{")
 
       //if (kernelFileExt == "cu") {
-      //  out.append("\"gpuInputs\":["+kernelInputs.filter(in => !isPrimitiveTypBe(in.tp)).map(in=>"{\""+quote(in)+"\":[\""+remap(in.tp)+"\"]}").mkString(",")+"],")
+      //  out.append("\"gpuInputs\":["+kernelInputs.filter(in => !isPrimitiveManifeste(in.tp)).map(in=>"{\""+quote(in)+"\":[\""+remap(in.tp)+"\"]}").mkString(",")+"],")
         out.append("\"gpuOutputs\":{"+outputs.map(o => "\""+quote(o._1)+"\":"+o._2.toString).mkString(",")+"},")
         out.append("\"gpuTemps\":["+temps.map(t=>"{\""+t.sym+"\":[\""+t.tp+"\",\""+t.size+"\"]}").mkString(",")+"],")
         out.append("\"aux\":{"+auxMeta.map(m => "\"" + m._1 + "\":" + m._2.toString).mkString(",")+"}")
       //}
       //else { //opencl
-      //  out.append("\"gpuInputs\":["+getKernelInputs.filter(in=>isObjectTypBe(in.TypBe)).map(in=>"{\""+quote(in)+"\":[\""+remap(in.TypBe)+"\",{"+unpackObject(in).map(f => "\"%s\":\"%s\"".format(f._1,remap(f._2)).replaceAll("__global ","")).mkString(",")+"}]}").mkString(",")+"],")
-      //  out.append("\"gpuOutputs\":["+outputs.toList.reverse.map(out=>"{\""+quote(out._1)+"\":[\""+remap(out._1.TypBe)+"\",["+ out._2.argsFuncHtoD.map("\""+quote(_)+"\"").mkString(",")+"],{"+unpackObject(out._1).map(f => "\"%s\":\"%s\"".format(f._1,remap(f._2)).replaceAll("__global ","")).mkString(",")+"}]}").mkString(",")+"],")
+      //  out.append("\"gpuInputs\":["+getKernelInputs.filter(in=>isObjectManifeste(in.Manifeste)).map(in=>"{\""+quote(in)+"\":[\""+remap(in.Manifeste)+"\",{"+unpackObject(in).map(f => "\"%s\":\"%s\"".format(f._1,remap(f._2)).replaceAll("__global ","")).mkString(",")+"}]}").mkString(",")+"],")
+      //  out.append("\"gpuOutputs\":["+outputs.toList.reverse.map(out=>"{\""+quote(out._1)+"\":[\""+remap(out._1.Manifeste)+"\",["+ out._2.argsFuncHtoD.map("\""+quote(_)+"\"").mkString(",")+"],{"+unpackObject(out._1).map(f => "\"%s\":\"%s\"".format(f._1,remap(f._2)).replaceAll("__global ","")).mkString(",")+"}]}").mkString(",")+"],")
       //}
 
       out.append("}")
@@ -100,25 +100,25 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
     isNestedNode = false
   }
 
-  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
     if (external) {
       // CUDA library ops use a C wrapper, so should be generated as a C kernel
-      super.emitKernelHeader(syms, syms ::: vals, vars, resultTypBe, resultIsVar, external)
+      super.emitKernelHeader(syms, syms ::: vals, vars, resultManifeste, resultIsVar, external)
     }
   }
 
-  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
     if (!isGPUable) throw new GenerationFailedException("This kernel is not GPUable")
 
     if (external) {
-      super.emitKernelFooter(syms, vals, vars, resultTypBe, resultIsVar, external)
+      super.emitKernelFooter(syms, vals, vars, resultManifeste, resultIsVar, external)
     }
 
     // aks TODO: the rest of this stuff adds to metadata and seems necessary even if we are external.
     // should probably be refactored...
     tabWidth -= 1
 
-    dsTypBesList ++= (syms++vals++vars).map(s => (s.tp,remap(s.tp)))
+    dsManifestesList ++= (syms++vals++vars).map(s => (s.tp,remap(s.tp)))
 
     // Print helper functions to file stream
     helperFuncStream.flush
@@ -128,7 +128,7 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
   }
 
   override def emitTransferFunctions() {    
-    for ((tp,name) <- dsTypBesList) {
+    for ((tp,name) <- dsManifestesList) {
       // Emit input copy helper functions for object type inputs
       //TODO: For now just iterate over all possible hosts, but later we can pick one depending on the input target
       try {
@@ -246,7 +246,7 @@ trait GPUCodegen extends CLikeCodegen with AbstractHostTransfer with AbstractDev
   def registerPtrDef(sym: Sym[Any]): Unit = ptrSymSet.add(sym)
   
   def emitPtrDef(sym: Sym[Any], rhs: Exp[Any]): Unit = {
-    if(processingHelperFunc && !isPrimitiveTypBe(sym.tp)) {
+    if(processingHelperFunc && !isPrimitiveManifeste(sym.tp)) {
       rhs match {
         case s@Sym(_) => 
           if(!ptrSymSet.contains(s)) throw new GenerationFailedException("Ptr is not defined for " + quote(s))

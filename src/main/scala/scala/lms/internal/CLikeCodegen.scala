@@ -11,7 +11,7 @@ trait CLikeCodegen extends GenericCodegen {
   def mangledName(name: String) = name.replaceAll("\\s","").map(c => if(!c.isDigit && !c.isLetter) '_' else c) 
 
   // List of datastructure types that requires transfer functions to be generated for this target
-  val dsTypBesList = HashSet[(TypB[_],String)]()
+  val dsManifestesList = HashSet[(Manifest[_],String)]()
 
   // Streams for helper functions and its header
   var helperFuncStream: PrintWriter = _
@@ -23,7 +23,7 @@ trait CLikeCodegen extends GenericCodegen {
 
   def emitValDef(sym: Sym[Any], rhs: String): Unit = emitValDef(quote(sym), sym.tp, rhs)
 
-  def emitValDef(sym: String, tpe: TypB[_], rhs: String): Unit = {
+  def emitValDef(sym: String, tpe: Manifest[_], rhs: String): Unit = {
     if(remap(tpe) != "void") stream.println(remap(tpe) + " " + sym + " = " + rhs + ";")
   }
 
@@ -35,10 +35,10 @@ trait CLikeCodegen extends GenericCodegen {
     stream.println(quote(sym) + " = " + rhs + ";")
   }
 
-  def remapWithRef[A](m: TypB[A]): String = remap(m) + addRef(m)
+  def remapWithRef[A](m: Manifest[A]): String = remap(m) + addRef(m)
   def remapWithRef(tpe: String): String = tpe + addRef(tpe)
 
-  override def remap[A](m: TypB[A]) : String = {
+  override def remap[A](m: Manifest[A]) : String = {
     if (m.erasure == classOf[Variable[AnyVal]])
       remap(m.typeArguments.head)
     else if (m.erasure == classOf[List[Any]]) { // Use case: Delite Foreach sync list 
@@ -57,15 +57,15 @@ trait CLikeCodegen extends GenericCodegen {
         case "Double" => "double"
         case "Unit" => "void"
         case "Nothing" => "void"
-        case _ => throw new GenerationFailedException("CLikeGen: remap(m) : TypBe %s cannot be remapped.".format(m.toString))
+        case _ => throw new GenerationFailedException("CLikeGen: remap(m) : Manifeste %s cannot be remapped.".format(m.toString))
       }
     }
   }
 
   def addRef(): String = if (cppMemMgr=="refcnt") " " else " *"
-  def addRef[A](m: TypB[A]): String = addRef(remap(m))
+  def addRef[A](m: Manifest[A]): String = addRef(remap(m))
   def addRef(tpe: String): String = {
-    if (!isPrimitiveTypBe(tpe) && !isVoidTypBe(tpe)) addRef()
+    if (!isPrimitiveManifeste(tpe) && !isVoidManifeste(tpe)) addRef()
     else " "
   }
   
@@ -79,13 +79,13 @@ trait CLikeCodegen extends GenericCodegen {
   }
   def wrapSharedPtr(tpe: String): String = {
     assert(cppMemMgr == "refcnt")
-    if(!isPrimitiveTypBe(tpe) && !isVoidTypBe(tpe)) 
+    if(!isPrimitiveManifeste(tpe) && !isVoidManifeste(tpe)) 
       "std::shared_ptr<" + tpe + ">" 
     else 
       tpe
   }
 
-  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelHeader(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
 
     stream.append("#include \"" + deviceTarget + "helperFuncs.h\"\n")
     
@@ -93,12 +93,12 @@ trait CLikeCodegen extends GenericCodegen {
       val out = new StringBuilder
       if(resultIsVar) {
         if (cppMemMgr == "refcnt")
-          out.append(wrapSharedPtr(hostTarget + "Ref" + unwrapSharedPtr(resultTypBe)))
+          out.append(wrapSharedPtr(hostTarget + "Ref" + unwrapSharedPtr(resultManifeste)))
         else
-          out.append(hostTarget + "Ref" + resultTypBe + addRef())
+          out.append(hostTarget + "Ref" + resultManifeste + addRef())
       }
       else {
-        out.append(resultTypBe + addRef(resultTypBe))
+        out.append(resultManifeste + addRef(resultManifeste))
       }
 
       out.append(" kernel_" + syms.map(quote).mkString("") + "(")
@@ -117,39 +117,39 @@ trait CLikeCodegen extends GenericCodegen {
     }
 
     //TODO: Remove the dependency to Multiloop to Delite
-    if (!resultTypBe.startsWith("DeliteOpMultiLoop")) {
+    if (!resultManifeste.startsWith("DeliteOpMultiLoop")) {
       stream.println(kernelSignature + " {")
       headerStream.println(kernelSignature + ";")
     }
   }
 
-  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultTypBe: String, resultIsVar: Boolean, external: Boolean): Unit = {
+  override def emitKernelFooter(syms: List[Sym[Any]], vals: List[Sym[Any]], vars: List[Sym[Any]], resultManifeste: String, resultIsVar: Boolean, external: Boolean): Unit = {
     //TODO: Remove the dependency to Multiloop to Delite
-    if(resultTypBe != "void" && !resultTypBe.startsWith("DeliteOpMultiLoop"))
+    if(resultManifeste != "void" && !resultManifeste.startsWith("DeliteOpMultiLoop"))
       stream.println("return " + quote(syms(0)) + ";")
 
-    if(!resultTypBe.startsWith("DeliteOpMultiLoop"))
+    if(!resultManifeste.startsWith("DeliteOpMultiLoop"))
       stream.println("}")
 /*
     for(s <- syms++vals++vars) {
-      if(dsTypBesList.contains(s.tp)) println("contains :" + remap(s.tp))
+      if(dsManifestesList.contains(s.tp)) println("contains :" + remap(s.tp))
       else println("not contains: " + remap(s.tp))
     }
-    println(syms.map(quote).mkString("") + "adding dsTypBesList:" + (syms++vals++vars).map(_.tp).mkString(","))
-    dsTypBesList ++= (syms++vals++vars).map(_.tp)
-    println("dsTypBs-lms:" + dsTypBesList.map(remap(_)).mkString(",")) //toString)
+    println(syms.map(quote).mkString("") + "adding dsManifestesList:" + (syms++vals++vars).map(_.tp).mkString(","))
+    dsManifestesList ++= (syms++vals++vars).map(_.tp)
+    println("dsManifests-lms:" + dsManifestesList.map(remap(_)).mkString(",")) //toString)
   */
-    dsTypBesList ++= (syms++vals++vars).map(s => (s.tp,remap(s.tp)))
+    dsManifestesList ++= (syms++vals++vars).map(s => (s.tp,remap(s.tp)))
   }
 
-  def isPrimitiveTypBe(tpe: String) : Boolean = {
+  def isPrimitiveManifeste(tpe: String) : Boolean = {
     tpe match {
       case "bool" | "int8_t" | "uint16_t" | "int16_t" | "int32_t" | "int64_t" | "float" | "double" => true
       case _ => false
     }
   }
 
-  def isVoidTypBe(tpe: String) : Boolean = {
+  def isVoidManifeste(tpe: String) : Boolean = {
     if(tpe == "void") true
     else false
   }

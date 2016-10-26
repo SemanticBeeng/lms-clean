@@ -8,23 +8,23 @@ import scala.collection.mutable.ListBuffer
 import java.lang.{StackTraceElement,Thread}
 
 
-/**
- * The Expressions trait houses common AST nodes. It also manages a list of encountered Definitions which
- * allows for common sub-expression elimination (CSE).
- *
- * @since 0.1
-  */
 
-  abstract class Exp[+T:TypB] {
-    def tp: TypB[T @uncheckedVariance] = implicitly[TypB[T]] //invariant position! but hey...
+/**
+  * The Expressions trait houses common AST nodes. It also manages a list of encountered Definitions which
+  * allows for common sub-expression elimination (CSE).
+  *
+  * @since 0.1
+  */
+trait Expressions extends Utils {
+
+  abstract class Exp[+T:Manifest] {
+    def tp: Manifest[T @uncheckedVariance] = implicitly[Manifest[T]] //invariant position! but hey...
     def pos: List[SourceContext] = Nil
   }
 
+  case class Const[+T:Manifest](x: T) extends Exp[T]
 
-  case class Const[+T:TypB](x: T) extends Exp[T]
-
-
-  case class Sym[+T:TypB](val id: Int) extends Exp[T] {
+  case class Sym[+T:Manifest](val id: Int) extends Exp[T] {
     var sourceContexts: List[SourceContext] = Nil
     override def pos = sourceContexts
     def withPos(pos: List[SourceContext]) = { sourceContexts :::= pos; this }
@@ -33,49 +33,22 @@ import java.lang.{StackTraceElement,Thread}
   case class Variable[+T](val e: Exp[Variable[T]]) // TODO: decide whether it should stay here ... FIXME: should be invariant
 
 
-  abstract class TypB[T] {
-    def typeArguments: List[TypB[_]]
-    def arrayTypB: TypB[Array[T]]
-    def runtimeClass: java.lang.Class[_]
-    def <:<(that: TypB[_]): Boolean
-    def erasure: java.lang.Class[_]
+  abstract class Def[+T] { // operations (composite)
+    override final lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this.asInstanceOf[Product])
   }
 
-  case class ManifestTypB[T](mf: Manifest[T]) extends TypB[T] {
-    def typeArguments: List[TypB[_]]   = mf.typeArguments.map(ManifestTypB(_))
-    def arrayTypB: TypB[Array[T]] = ManifestTypB(mf.arrayManifest)
-    def runtimeClass: java.lang.Class[_] = mf.runtimeClass
-    def <:<(that: TypB[_]): Boolean = that match {
-      case ManifestTypB(mf1) => mf.<:<(mf1)
-      case _ => false
-    }
-    def erasure: java.lang.Class[_] = mf.erasure
-    //override def canEqual(that: Any): Boolean = mf.canEqual(that) // TEMP
-    //override def equals(that: Any): Boolean = mf.equals(that) // TEMP
-    //override def hashCode = mf.hashCode
-    override def toString = mf.toString
-  }
+  abstract class Stm // statement (links syms and definitions)
 
 
-trait Expressions extends Utils {
 
+  def typ[T:Manifest]: Manifest[T] = implicitly[Manifest[T]]
 
-  def toTypB[T:Manifest]: TypB[T] = {
-    ManifestTypB(implicitly[Manifest[T]])
-  }
-
-  def typ[T:TypB]: TypB[T] = implicitly[TypB[T]]
-
-  implicit def unit[T:Manifest](x: T) = {
-    implicit val t:TypB[T] = toTypB[T]
-    Const(x)
-  }
-
+  implicit def unit[T:Manifest](x: T) = Const(x)
 
   var nVars = 0
-  def fresh[T:TypB]: Sym[T] = Sym[T] { nVars += 1;  if (nVars%1000 == 0) printlog("nVars="+nVars);  nVars -1 }
+  def fresh[T:Manifest]: Sym[T] = Sym[T] { nVars += 1;  if (nVars%1000 == 0) printlog("nVars="+nVars);  nVars -1 }
 
-  def fresh[T:TypB](pos: List[SourceContext]): Sym[T] = fresh[T].withPos(pos)
+  def fresh[T:Manifest](pos: List[SourceContext]): Sym[T] = fresh[T].withPos(pos)
 
   def quotePos(e: Exp[Any]): String = e.pos match {
     case Nil => "<unknown>"
@@ -84,15 +57,9 @@ trait Expressions extends Utils {
         case None => List(cs)
         case Some(p) => cs::all(p)
       }
-    cs.map(c => all(c).reverse.map(c => c.fileName.split("/").last + ":" + c.line).mkString("//")).mkString(";")
+      cs.map(c => all(c).reverse.map(c => c.fileName.split("/").last + ":" + c.line).mkString("//")).mkString(";")
   }
 
-
-  abstract class Def[+T] { // operations (composite)
-    override final lazy val hashCode = scala.runtime.ScalaRunTime._hashCode(this.asInstanceOf[Product])
-  }
-
-  abstract class Stm // statement (links syms and definitions)
 
   def infix_lhs(stm: Stm): List[Sym[Any]] = stm match {
     case TP(sym, rhs) => sym::Nil
@@ -148,17 +115,17 @@ trait Expressions extends Utils {
 
   def findDefinition[T](s: Sym[T]): Option[Stm] =
     globalDefsCache.get(s)
-    //globalDefs.find(x => x.defines(s).nonEmpty)
+  //globalDefs.find(x => x.defines(s).nonEmpty)
 
   def findDefinition[T](d: Def[T]): Option[Stm] =
     globalDefs.find(x => x.defines(d).nonEmpty)
 
-  def findOrCreateDefinition[T:TypB](d: Def[T], pos: List[SourceContext]): Stm =
+  def findOrCreateDefinition[T:Manifest](d: Def[T], pos: List[SourceContext]): Stm =
     findDefinition[T](d) map { x => x.defines(d).foreach(_.withPos(pos)); x } getOrElse {
       createDefinition(fresh[T](pos), d)
     }
 
-  def findOrCreateDefinitionExp[T:TypB](d: Def[T], pos: List[SourceContext]): Exp[T] =
+  def findOrCreateDefinitionExp[T:Manifest](d: Def[T], pos: List[SourceContext]): Exp[T] =
     findOrCreateDefinition(d, pos).defines(d).get
 
   def createDefinition[T](s: Sym[T], d: Def[T]): Stm = {
@@ -168,13 +135,8 @@ trait Expressions extends Utils {
   }
 
 
-  protected implicit def toAtom[T:TypB](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
+  protected implicit def toAtom[T:Manifest](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
     findOrCreateDefinitionExp(d, List(pos)) // TBD: return Const(()) if type is Unit??
-  }
-
-  protected implicit def toAtomM[T:Manifest](d: Def[T])(implicit pos: SourceContext): Exp[T] = {
-    implicit val t:TypB[T] = toTypB[T]
-    toAtom(d)
   }
 
   object Def {

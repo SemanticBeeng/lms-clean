@@ -4,26 +4,25 @@ import internal._
 import scala.annotation.implicitNotFound
 
 
-trait TypF[T] {
-  type U
-  def from(e:Exp[U]): T
-  def to(x:T):Exp[U]
-  def m: Manifest[U]
-}
-
-
 trait Base {
   // preliminaries
   @implicitNotFound("${T} is not a DSL type")
-  type TypB[T]
+  type Manifest[T]
   @implicitNotFound("${A} cannot be implicitly lifted to ${B}")
   type Lift[A,B]
-  implicit def identLift[T:TypF]: Lift[T,T]
+  implicit def identLift[T:Rep]: Lift[T,T]
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U
 
-/*  case class Rewrite[T:TypF](a:T, b:T)
+  trait Rep[T] {
+    type U
+    def from(e:Exp[U]): T
+    def to(x:T):Exp[U]
+    def m: Manifest[U]
+  }
 
-  def lower[A:TypF,B:TypF,C:TypF](f: (A,B) => Rewrite[C]): Unit
+/*  case class Rewrite[T:Rep](a:T, b:T)
+
+  def lower[A:Rep,B:Rep,C:Rep](f: (A,B) => Rewrite[C]): Unit
  */
 }
 
@@ -33,10 +32,10 @@ trait BaseExp extends Base with Expressions {
     def to(x:A):B
   }
 
-  implicit def identLift[T:TypF]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
+  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.to(x)
 
-  def typ[T:TypF] = implicitly[TypF[T]]
+  def typ[T:Rep] = implicitly[Rep[T]]
 
 }
 
@@ -59,9 +58,9 @@ trait DSL extends Base {
 
   type Unit
 
-  implicit def intTyp: TypF[Int]
+  implicit def intTyp: Rep[Int]
   implicit def intLift: Lift[scala.Int,Int]
-  implicit def booleanTyp: TypF[Boolean]
+  implicit def booleanTyp: Rep[Boolean]
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
 
   trait ArrayOps[T] {
@@ -71,10 +70,10 @@ trait DSL extends Base {
   }
 
   type Array[T] <: ArrayOps[T]
-  def NewArray[T:TypF](x: Int): Array[T]
-  implicit def arrayTyp[T:TypF]: TypF[Array[T]]
+  def NewArray[T:Rep](x: Int): Array[T]
+  implicit def arrayTyp[T:Rep]: Rep[Array[T]]
 
-//  def __ifThenElse[C,A,B](c:Boolean, a: =>A, b: =>B)(implicit mA: Lift[A,C], mB: Lift[B,C], mC: TypF[C]): C
+//  def __ifThenElse[C,A,B](c:Boolean, a: =>A, b: =>B)(implicit mA: Lift[A,C], mB: Lift[B,C], mC: Rep[C]): C
 
   // tuples, variables (for c: are variables just 0-elem arrays?), functions
 
@@ -109,9 +108,9 @@ trait Impl extends BaseExp with DSL {
 
   case class Unit(e: Exp[scala.Unit])
 
-  implicit val unitTyp: TypF[Unit] = new TypF[Unit] { type U = scala.Unit; def from(e:Exp[U]) = Unit(e); def to(x:Unit) = x.e; def m = manifest[U]; override def toString = "Unit" }
-  implicit val intTyp: TypF[Int] = new TypF[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
-  implicit val booleanTyp: TypF[Boolean] = new TypF[Boolean] { type U = scala.Boolean; def from(e:Exp[U]) = Boolean(e); def to(x:Boolean) = x.e; def m = manifest[U]; override def toString = "Boolean" }
+  implicit val unitTyp: Rep[Unit] = new Rep[Unit] { type U = scala.Unit; def from(e:Exp[U]) = Unit(e); def to(x:Unit) = x.e; def m = manifest[U]; override def toString = "Unit" }
+  implicit val intTyp: Rep[Int] = new Rep[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
+  implicit val booleanTyp: Rep[Boolean] = new Rep[Boolean] { type U = scala.Boolean; def from(e:Exp[U]) = Boolean(e); def to(x:Boolean) = x.e; def m = manifest[U]; override def toString = "Boolean" }
 
   implicit val intLift: Lift[scala.Int,Int] = new Lift[scala.Int,Int] { def to(x:scala.Int) = Int(unit(x)) }
   implicit val booleanLift: Lift[scala.Boolean,Boolean] = new Lift[scala.Boolean,Boolean] { def to(x:scala.Boolean) = Boolean(unit(x)) }
@@ -123,23 +122,23 @@ trait Impl extends BaseExp with DSL {
   case class ArrayUpdate[T](e1: Exp[scala.Array[T]], e2: Exp[scala.Int], e3:Exp[T]) extends Def[scala.Unit]
 
 
-  case class Array[T:TypF](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T] {
+  case class Array[T:Rep](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T] {
     val tp = typ[T]
     val e = bleh.asInstanceOf[Exp[scala.Array[tp.U]]]
     implicit val mf = tp.m
     def length = Int(ArrayLength(e))
-    def apply(x: Int) = tp.from(toAtomM(ArrayApply(e, x.e)))
+    def apply(x: Int) = tp.from(toAtom(ArrayApply(e, x.e)))
     def update(x: Int, y: T): Unit = Unit(ArrayUpdate(e, x.e, tp.to(y)))
   }
 
-  def NewArray[T:TypF](x: Int): Array[T] = {
+  def NewArray[T:Rep](x: Int): Array[T] = {
     val tp = typ[T]
     //    implicit val tpm = tp.m
-    val an: Exp[scala.Array[Any]]  = toAtomM(ArrayNew(x.e))
+    val an: Exp[scala.Array[Any]]  = toAtom(ArrayNew(x.e))
     Array(an)
   }
 
-  implicit def arrayTyp[T:TypF]: TypF[Array[T]] = new TypF[Array[T]] {
+  implicit def arrayTyp[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
     val tp = typ[T]
     type U = scala.Array[tp.U]
     private implicit val tpm = tp.m
@@ -147,9 +146,9 @@ trait Impl extends BaseExp with DSL {
     def to(x:Array[T]) = x.e.asInstanceOf[Exp[U]]
     def m = manifest[U]
     override def toString = "Array["+typ[T]+"]"
-    }
+  }
 
- /* def __ifThenElse[C,A,B](c:Boolean, a: =>A, b: =>B)(implicit mA: Lift[A,C], mB: Lift[B,C], mC: TypF[C]): C = {
+ /* def __ifThenElse[C,A,B](c:Boolean, a: =>A, b: =>B)(implicit mA: Lift[A,C], mB: Lift[B,C], mC: Rep[C]): C = {
     reflect[C]("if (",ref(c),") ",ref(mA.to(a))," else ",ref(mB.to(b)))
   }
   */

@@ -76,27 +76,27 @@ trait Transforming extends Expressions with Blocks with OverloadHack {
 
   // FIXME: mirroring for effects!
 
-  def mtype[A,B](m:TypB[A]): TypB[B] = m.asInstanceOf[TypB[B]] // hack: need to pass explicit manifest during mirroring
+  def mtype[A,B](m:Manifest[A]): Manifest[B] = m.asInstanceOf[Manifest[B]] // hack: need to pass explicit manifest during mirroring
   def mpos(s: List[SourceContext]): SourceContext = if (s.nonEmpty) s.head else implicitly[SourceContext] // hack: got list of pos but need to pass single pos to mirror
 
   
   
-  def mirror[A:TypB](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = mirrorDef(e,f)
+  def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = mirrorDef(e,f)
 
-  def mirrorDef[A:TypB](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = sys.error("don't know how to mirror " + e)
+  def mirrorDef[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = sys.error("don't know how to mirror " + e)
 
-  def mirrorFatDef[A:TypB](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = sys.error("don't know how to mirror " + e) //hm...
+  def mirrorFatDef[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = sys.error("don't know how to mirror " + e) //hm...
   
 }
 
 
 trait FatTransforming extends Transforming with FatExpressions {
   
-  override def mirror[A:TypB](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+  override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
     case Forward(x) => toAtom(Forward(f(x)))(mtype(typ[A]),pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] 
   
-  //def mirror[A:TypB](e: FatDef, f: Transformer): Exp[A] = sys.error("don't know how to mirror " + e)  
+  //def mirror[A:Manifest](e: FatDef, f: Transformer): Exp[A] = sys.error("don't know how to mirror " + e)  
   
 }
