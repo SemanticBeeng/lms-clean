@@ -17,6 +17,7 @@ object Main extends App with ScalaGenNested with ScalaGenInts{
     z
   }
 
+  //Only print the generated code in the console for now for debug purposes
   stream = new PrintWriter(System.out)
   emitBlock(reifyBlock(run(8)))
   stream.flush()
