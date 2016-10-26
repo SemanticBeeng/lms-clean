@@ -4,7 +4,7 @@ import common._
 import internal._
 import java.io.{File, PrintWriter}
 
-object Main extends App with ScalaGenEffect with ScalaGenInts{
+object Main extends App with ScalaGenNested with ScalaGenInts{
 
   val IR = new IntsImpl with Effects {}
 
@@ -13,7 +13,8 @@ object Main extends App with ScalaGenEffect with ScalaGenInts{
   def run(z: Int) = {
     val x: Int = 5
     val y = x + 3
-    y
+    val z = x*x+x-x
+    z
   }
 
   stream = new PrintWriter(System.out)

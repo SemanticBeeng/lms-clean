@@ -44,5 +44,6 @@ trait BaseExp extends Base with Expressions {
 }
 
 trait ScalaGenBase extends ScalaCodegen
-trait ScalaGenEffect extends ScalaNestedCodegen with ScalaGenBase
+trait ScalaGenNested extends ScalaNestedCodegen with ScalaGenBase
+
 trait ScalaGenFat extends ScalaFatCodegen with ScalaGenBase
