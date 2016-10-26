@@ -11,6 +11,7 @@ trait Base {
 
   @implicitNotFound("${A} cannot be implicitly lifted to ${B}")
   type Lift[A,B]
+
   implicit def identLift[T:Rep]: Lift[T,T]
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U
 
