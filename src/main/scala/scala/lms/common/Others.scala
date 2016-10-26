@@ -1,67 +1,19 @@
 package scala.lms
-
-import internal._
-import scala.annotation.implicitNotFound
-
-
-trait Base {
-  // preliminaries
-  @implicitNotFound("${T} is not a DSL type")
-  type Exp[T]
-
-  @implicitNotFound("${A} cannot be implicitly lifted to ${B}")
-  type Lift[A,B]
-
-  implicit def identLift[T:Rep]: Lift[T,T]
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U
-
-  trait Rep[T] {
-    type U
-    def from(e:Exp[U]): T
-    def to(x:T):Exp[U]
-    def m: Manifest[U]
-  }
-
-/*  case class Rewrite[T:Rep](a:T, b:T)
-
-  def lower[A:Rep,B:Rep,C:Rep](f: (A,B) => Rewrite[C]): Unit
- */
-}
-
-trait BaseExp extends Base with Expressions {
-
-  trait Lift[A,B] {
-    def to(x:A):B
-  }
-
-  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.to(x)
-
-  def typ[T:Rep] = implicitly[Rep[T]]
-
-}
-
+package common
 
 trait DSL extends Base {
-  trait IntOps {
-    def +(y: Int): Int
-    def -(y: Int): Int
-    def *(y: Int): Int
-    def /(y: Int): Int
-    def %(y: Int): Int
-  }
+  this: Ints =>
+
   trait BooleanOps {
     def &&(y: => Boolean): Boolean
     def ||(y: => Boolean): Boolean
     def unary_! : Boolean
   }
-  type Int <: IntOps
+
   type Boolean <: BooleanOps
 
   type Unit
 
-  implicit def intTyp: Rep[Int]
-  implicit def intLift: Lift[scala.Int,Int]
   implicit def booleanTyp: Rep[Boolean]
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
 
@@ -82,21 +34,7 @@ trait DSL extends Base {
 }
 
 trait Impl extends BaseExp with DSL {
-
-
-  case class Plus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
-  case class Minus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
-  case class Time(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
-  case class Div(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
-  case class Mod(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
-
-  case class Int(e: Exp[scala.Int]) extends IntOps {
-    def +(y: Int) = Int(Plus(e, y.e))
-    def -(y: Int) = Int(Minus(e, y.e))
-    def *(y: Int) = Int(Time(e, y.e))
-    def /(y: Int) = Int(Div(e, y.e))
-    def %(y: Int) = Int(Mod(e, y.e))
-  }
+  this: IntsImpl =>
 
   case class And(e1: Exp[scala.Boolean], e2: Exp[scala.Boolean]) extends Def[scala.Boolean]
   case class Or(e1: Exp[scala.Boolean], e2: Exp[scala.Boolean]) extends Def[scala.Boolean]
@@ -111,10 +49,9 @@ trait Impl extends BaseExp with DSL {
   case class Unit(e: Exp[scala.Unit])
 
   implicit val unitTyp: Rep[Unit] = new Rep[Unit] { type U = scala.Unit; def from(e:Exp[U]) = Unit(e); def to(x:Unit) = x.e; def m = manifest[U]; override def toString = "Unit" }
-  implicit val intTyp: Rep[Int] = new Rep[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
+
   implicit val booleanTyp: Rep[Boolean] = new Rep[Boolean] { type U = scala.Boolean; def from(e:Exp[U]) = Boolean(e); def to(x:Boolean) = x.e; def m = manifest[U]; override def toString = "Boolean" }
 
-  implicit val intLift: Lift[scala.Int,Int] = new Lift[scala.Int,Int] { def to(x:scala.Int) = Int(unit(x)) }
   implicit val booleanLift: Lift[scala.Boolean,Boolean] = new Lift[scala.Boolean,Boolean] { def to(x:scala.Boolean) = Boolean(unit(x)) }
 
 

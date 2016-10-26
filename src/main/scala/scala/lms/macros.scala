@@ -3,6 +3,7 @@ package scala.lms
 import language.experimental.{macros => m}
 import scala.annotation.StaticAnnotation
 
+import macros._
 
 class ir extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro macros.ir.impl
