@@ -12,22 +12,23 @@ object Main extends App with ScalaGenRich {
   import IR._
 
   val run = (p: Int) =>  {
-    val x: Int = p
+    val x: Int = 4
     val y: Int = x + 3
-    val z: Int = x*x+x-x
+    val z: Int = x*p+x-x
     val b: Boolean = true
     if (b)
       z
     else
-      y
+      p
 
   }
 
   //Only print the generated code in the console for now for debug purposes
   stream = new PrintWriter(System.out)
-  val k: Int  = 8
+  val k: Int = 8
   val f = run
-  println(f)
+  implicit val mU = intTyp.m
+  implicit val m = manifest[intTyp.U => intTyp.U]
   emitBlock(reifyBlock(f))
   stream.flush()
 

@@ -27,13 +27,13 @@ trait FunctionsExp extends Functions with BaseExp with Effects {
     Lambda(f, x, y)
   }
 
-  implicit def fun[A,B](fun: A => B)(implicit rA:Rep[A], rB:Rep[B]) = {
+  implicit def fun[A,B](fun: A => B)(implicit rA:Rep[A], rB:Rep[B]): Exp[rA.U => rB.U] = {
     implicit val mA = rA.m
     implicit val mB = rB.m
+    implicit val m = manifest[rA.U => rB.U]
     val fA = fun.compose((x:Exp[rA.U]) => rA.from(x))
     val fB = fA.andThen((x:B) => rB.to(x))
-    val lf: Def[rA.U => rB.U] = doLambdaDef(fB)
-    toAtom(lf)
+    doLambdaDef(fB)
   }
 /*
   implicit def funTyp[A:Rep, B:Rep](fun: A => B): Rep[A => B] = new Rep[A=>B]{
