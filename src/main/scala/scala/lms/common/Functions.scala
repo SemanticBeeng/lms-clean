@@ -32,7 +32,8 @@ trait FunctionsExp extends Functions with BaseExp with Effects {
     implicit val mB = rB.m
     val fA = fun.compose((x:Exp[rA.U]) => rA.from(x))
     val fB = fA.andThen((x:B) => rB.to(x))
-    toAtom(doLambdaDef(fB))
+    val lf: Def[rA.U => rB.U] = doLambdaDef(fB)
+    toAtom(lf)
   }
 /*
   implicit def funTyp[A:Rep, B:Rep](fun: A => B): Rep[A => B] = new Rep[A=>B]{
