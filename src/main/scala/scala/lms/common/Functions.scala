@@ -14,7 +14,7 @@ trait Functions extends Base {
 
 }
 
-trait FunctionsExp extends Functions with BaseExp with Effects {
+trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   case class Lambda[A, B](f: Exp[A] => Exp[B], x: Exp[A], y: Block[B]) extends Def[A => B]
 
@@ -35,18 +35,40 @@ trait FunctionsExp extends Functions with BaseExp with Effects {
     val fB = fA.andThen((x:B) => rB.to(x))
     doLambdaDef(fB)
   }
-/*
-  implicit def funTyp[A:Rep, B:Rep](fun: A => B): Rep[A => B] = new Rep[A=>B]{
-    val tpA = typ[A]
-    val tpB = typ[B]
-    type U = tpA.U => tpB.U
-    implicit val mA = tpA.m
-    implicit val mB = tpB.m
-    implicit val m = manifest[U]
-    def from(x: Exp[U]) = fun
-    def to(x: A => B) = doLambdaDef(fun.compose((x:Exp[tpA.U]) => tpA.from(x)).andThen((x:B) => tpB.to(x)))
+
+
+  override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
+//    case e@Lambda(g,x:Exp[Any],y:Block[b]) => toAtom(Lambda(f(g),f(x),f(y))(e.mA,e.mB))(mtype(manifest[A]),pos)
+//    case Reflect(e@Apply(g,arg), u, es) => reflectMirrored(Reflect(Apply(f(g),f(arg))(e.mA,mtype(e.mB)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
+    case _ => super.mirror(e,f)
+  }).asInstanceOf[Exp[A]] // why??
+
+  override def syms(e: Any): List[Sym[Any]] = e match {
+    case Lambda(f, x, y) => syms(y)
+    case _ => super.syms(e)
   }
- */
+
+  override def boundSyms(e: Any): List[Sym[Any]] = e match {
+    case Lambda(f, x, y) => syms(x) ::: effectSyms(y)
+    case _ => super.boundSyms(e)
+  }
+
+// TODO: right now were trying to hoist as much as we can out of functions.
+// That might not always be appropriate. A promising strategy would be to have
+// explicit 'hot' and 'cold' functions.
+
+/*
+  override def hotSyms(e: Any): List[Sym[Any]] = e match {
+    case Lambda(f, x, y) => syms(y)
+    case _ => super.hotSyms(e)
+  }
+*/
+
+  override def symsFreq(e: Any): List[(Sym[Any], Double)] = e match {
+    case Lambda(f, x, y) => freqHot(y)
+    case _ => super.symsFreq(e)
+  }
+
 }
 
 trait ScalaGenFunctions extends ScalaGenNested {
@@ -68,4 +90,5 @@ trait ScalaGenFunctions extends ScalaGenNested {
 
     case _ => super.emitNode(sym, rhs)
   }
+
 }

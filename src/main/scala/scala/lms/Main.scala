@@ -25,7 +25,6 @@ object Main extends App with ScalaGenRich {
 
   //Only print the generated code in the console for now for debug purposes
   stream = new PrintWriter(System.out)
-  val k: Int = 8
   val f = run
   implicit val mU = intTyp.m
   implicit val m = manifest[intTyp.U => intTyp.U]
