@@ -21,7 +21,6 @@ trait Ints extends Base {
 
 trait IntsImpl extends BaseExp with Ints {
 
-
   case class Plus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
   case class Minus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
   case class Times(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
@@ -52,4 +51,5 @@ trait ScalaGenInts extends ScalaGenBase {
     case Div(a,b) =>   emitValDef(sym, "" + quote(a) + "/" + quote(b))
     case _ => super.emitNode(sym, rhs)
   }
+
 }

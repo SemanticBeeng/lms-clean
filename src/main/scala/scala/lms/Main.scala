@@ -1,25 +1,34 @@
 package scala.lms
 
 import common._
+import util._
 import internal._
 import java.io.{File, PrintWriter}
 
-object Main extends App with ScalaGenNested with ScalaGenInts{
+object Main extends App with ScalaGenRich {
 
-  val IR = new IntsImpl with Effects {}
+  val IR  = new RichImpl {}
 
   import IR._
 
-  def run(z: Int) = {
-    val x: Int = 5
-    val y = x + 3
-    val z = x*x+x-x
-    z
+  val run = (p: Int) =>  {
+    val x: Int = p
+    val y: Int = x + 3
+    val z: Int = x*x+x-x
+    val b: Boolean = true
+    if (b)
+      z
+    else
+      y
+
   }
 
   //Only print the generated code in the console for now for debug purposes
   stream = new PrintWriter(System.out)
-  emitBlock(reifyBlock(run(8)))
+  val k: Int  = 8
+  val f = run
+  println(f)
+  emitBlock(reifyBlock(f))
   stream.flush()
 
 }

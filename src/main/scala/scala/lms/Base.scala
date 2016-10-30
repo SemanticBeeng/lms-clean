@@ -9,13 +9,14 @@ import scala.annotation.implicitNotFound
 trait Base {
   // preliminaries
   @implicitNotFound("${T} is not a DSL type")
-  type Exp[T]
+  type Exp[+T]
 
-  @implicitNotFound("${A} cannot be implicitly lifted to ${B}")
-  type Lift[A,B]
+  trait Lift[A,B] {
+    def to(x:A):B
+  }
 
-  implicit def identLift[T:Rep]: Lift[T,T]
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U
+  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
+  implicit def lift[T,U](x:T)(implicit e: Lift[T,U], rep:Rep[U]): U = e.to(x)
 
   trait Rep[T] {
     type U
@@ -31,13 +32,6 @@ trait Base {
 }
 
 trait BaseExp extends Base with Expressions {
-
-  trait Lift[A,B] {
-    def to(x:A):B
-  }
-
-  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.to(x)
 
   def typ[T:Rep] = implicitly[Rep[T]]
 
