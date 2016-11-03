@@ -4,7 +4,7 @@
  :scala-compiler-jars nil
  :name "lms-clean"
  :java-home "/usr/lib/jvm/java-8-openjdk"
- :java-flags ("-Xss2m" "-Xmx4G" "-XX:ReservedCodeCacheSize=128m" "-XX:MaxPermSize=2G")
+ :java-flags ("-Xss2m" "-Xmx4G" "-XX:ReservedCodeCacheSize=128m")
  :java-compiler-args nil
  :reference-source-roots ("/usr/lib/jvm/java-8-openjdk/src.zip")
  :scala-version "2.11.2"
