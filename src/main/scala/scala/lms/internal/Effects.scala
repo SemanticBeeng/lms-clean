@@ -569,7 +569,6 @@ trait Effects extends Expressions with Blocks with Utils {
   def reifyEffects[A:Manifest](block: => Exp[A], controlScope: Boolean = false): Block[A] = {
     val save = context
     context = Nil
-
     // only add control dependencies scopes where controlScope is explicitly true (i.e., the first-level of an IfThenElse)
     val saveControl = conditionalScope
     conditionalScope = controlScope
