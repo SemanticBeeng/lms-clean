@@ -41,5 +41,6 @@ object Main extends App with ScalaGenRich with ArithGraphExp{
 
   println("non staged execution")
   println(ArithGraphInt.app(2))
+  
 }
 
