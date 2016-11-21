@@ -27,7 +27,7 @@ trait IntsImpl extends BaseExp with Ints {
   case class Div(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
   case class Mod(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
 
-  case class Int(e: Exp[scala.Int]) extends IntOps {
+  case class Int(e: Exp[scala.Int]) extends IntOps with Expressable[scala.Int] {
     def +(y: Int) = Int(Plus(e, y.e))
     def -(y: Int) = Int(Minus(e, y.e))
     def *(y: Int) = Int(Times(e, y.e))
@@ -35,8 +35,9 @@ trait IntsImpl extends BaseExp with Ints {
     def %(y: Int) = Int(Mod(e, y.e))
   }
 
-  implicit val intTyp: Rep[Int] = new Rep[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
-  implicit val intLift: Lift[scala.Int,Int] = new Lift[scala.Int,Int] { def to(x:scala.Int) = Int(unit(x)) }
+  //  implicit val intTyp: Rep[Int] { type U = scala.Int } = new Rep[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
+  implicit val intTyp = RepE[scala.Int, Int](Int) 
+  implicit val intLift: Lift[scala.Int,Int] = intTyp
 
 }
 

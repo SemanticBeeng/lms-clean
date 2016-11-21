@@ -13,11 +13,12 @@ trait Base {
   type Exp[+T]
 
   trait Lift[A,B] {
-    def to(x:A):B
+    def lift(x:A):B
   }
 
-  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def to(x:T) = x }
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U], rep:Rep[U]): U = e.to(x)
+  implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def lift(x:T) = x }
+  implicit def lift[T,U](x:T)(implicit e: Lift[T,U], rep:Rep[U]): U = e.lift(x)
+
 
   trait Rep[T] {
     type U
@@ -25,6 +26,7 @@ trait Base {
     def to(x:T):Exp[U]
     def m: Manifest[U]
   }
+
 
 /*  case class Rewrite[T:Rep](a:T, b:T)
 
@@ -35,6 +37,19 @@ trait Base {
 trait BaseExp extends Base with Expressions with Blocks with Transforming {
 
   def typ[T:Rep] = implicitly[Rep[T]]
+
+  trait Expressable[A] {
+    def e: Exp[A]
+  }
+
+  case class RepE[A:Manifest,B <: Expressable[A]](f: Exp[A] => B) extends Rep[B] with Lift[A,B]{
+    type U = A
+    def from(x:Exp[A]) = f(x)
+    def to(x:B) = x.e
+    def lift(x:A):B = from(unit(x))
+    def m = manifest[A]
+  }
+  
 
 }
 

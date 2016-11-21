@@ -9,8 +9,33 @@ import compgraph._
 
 object Main extends App with ArithGraphExp with RichImpl with Compile {
 
-  dumpGeneratedCode = true
+  def f(p:Exp[scala.Int]) = {
+    val stagedApp: LambdaApply[scala.Int, scala.Int]  = fun(app)
+    stagedApp(p)
+  }
   
+  println("Staged execution:")  
+  val staged = compile(f)
+  val r1 = staged(5)
+  println(r1)
+
+
+  println("Non staged execution:")
+  val r2 = ArithGraphInt.app(2)
+  println(r2)
+  
+}
+
+trait Compile extends ScalaCompile {
+  self:RichImpl =>
+
+  dumpGeneratedCode = true
+  val codegen =  new ScalaGenRich { val IR:self.type = self}
+
+}
+
+trait Prog {
+
   val run = (p: Int) =>  {
     val x: Int = 4
     val y: Int = x + 3
@@ -20,35 +45,7 @@ object Main extends App with ArithGraphExp with RichImpl with Compile {
       z
     else
       p
-
   }
-
-
-  //Only print the generated code in the console for now for debug purposes
   
-
-  implicit val mU = intTyp.m
-  implicit val m = manifest[intTyp.U => intTyp.U]
-  //    val f = run
-
-  val f:Exp[scala.Int] => Exp[intTyp.U] = (p:Exp[scala.Int]) => applyOps(fun((p: Int) => app(p))).apply(p.asInstanceOf[Exp[intTyp.U]])
-//  codegen.stream = new PrintWriter(System.out)  
-//  val b = codegen.reifyBlock(f)
-//  codegen.emitBlock(b)
-//  codegen.stream.flush()
-
-  val c = compile(f)
-  println(c(5))
-
-
-  println("non staged execution")
-  println(ArithGraphInt.app(2))
-  
-}
-
-trait Compile extends ScalaCompile {
-  self:RichImpl =>
-  
-  val codegen =  new ScalaGenRich { val IR:self.type = self}
 
 }
