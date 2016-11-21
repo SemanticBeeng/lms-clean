@@ -94,10 +94,9 @@ trait ArithGraph extends Graph with ArithNodes  {
 }
 
 //Using staging
-trait ArithGraphExp extends ArithGraph {
+trait ArithGraphExp extends ArithGraph with Base {
+  self: Rich => 
 
-  val IR: Rich
-  import IR._
   type Data = Int
 
   def add(a: Int, b:Int) = a + b
