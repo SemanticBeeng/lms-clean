@@ -20,25 +20,32 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
 
+
   case class Lambda[A:Rep, B:Rep](fun: A => B) extends (A => B) {
 
     val rA = typ[A]
-    implicit val mf = rA.m
-
     val rB = typ[B]
-    implicit val mf2 = rB.m
 
+    val lambda = doLambdaDef(fun)(rA, rB)
+
+    def apply(arg:A):B = {
+      implicit val mf = rB.m
+      val apply = Apply(lambda, rA.to(arg))
+      rB.from(apply)
+    }
+  }
+
+  def doLambdaDef[A, B](fun: A => B)(rA: Rep[A], rB:Rep[B]) = {
+
+    implicit val mf = rA.m
+    implicit val mf2 = rB.m    
     val x: Exp[rA.U] = unboxedFresh[rA.U]
 
     val fA = fun.compose((x:Exp[rA.U]) => rA.from(x))
     val fB: Exp[rA.U] => Exp[rB.U] = fA.andThen((x:B) => rB.to(x))
 
     val b: Block[rB.U] = reifyEffects(fB(x))
-    val ld = LambdaDef(fB, x, b)
-
-    def apply(arg:A):B = {
-      rB.from(Apply(ld, rA.to(arg)))
-    }
+    toAtom(LambdaDef(fB, x, b))
   }
 
   def unboxedFresh[A:Manifest] : Exp[A] = fresh[A]
