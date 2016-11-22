@@ -12,7 +12,7 @@ trait Ints extends Base {
     def %(y: Int): Int
   }
 
-  implicit def intTyp: Rep[Int]
+  implicit def intTyp: Rep[Int] { type U = scala.Int }
   implicit def intLift: Lift[scala.Int,Int]
 
   type Int <: IntOps
@@ -36,8 +36,9 @@ trait IntsImpl extends BaseExp with Ints {
   }
 
   //  implicit val intTyp: Rep[Int] { type U = scala.Int } = new Rep[Int] {  type U = scala.Int; def from(e:Exp[U]) = Int(e); def to(x:Int) = x.e; def m = manifest[U]; override def toString = "Int" }
-  implicit val intTyp = RepE[scala.Int, Int](Int) 
-  implicit val intLift: Lift[scala.Int,Int] = intTyp
+  private val repE = RepE[scala.Int, Int](Int)
+  implicit val intTyp: Rep[Int] { type U = scala.Int } = repE
+  implicit val intLift: Lift[scala.Int,Int] = repE
 
 }
 

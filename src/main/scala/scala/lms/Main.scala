@@ -9,9 +9,10 @@ import compgraph._
 
 object Main extends App with ArithGraphExp with RichImpl with Compile {
 
-  def f(p:Exp[scala.Int]) = {
-    val stagedApp: LambdaApply[scala.Int, scala.Int]  = fun(app)
-    stagedApp(p)
+  def f(p:Exp[scala.Int]):Exp[scala.Int] = {
+    val g: Int => Int = app
+    val stagedApp: Lambda[Int, Int]  = fun(g)
+    intTyp.to(stagedApp(intTyp.from(p)))
   }
   
   println("Staged execution:")  

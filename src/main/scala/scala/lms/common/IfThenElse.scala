@@ -33,7 +33,7 @@ trait IfThenElsePureExp extends BaseExp with IfThenElse  {
     implicit val mf = tp.m
     val thenpC = tp.to(thenp)
     val elsepC = tp.to(elsep)
-    val condBool: Exp[scala.Boolean] = booleanTyp.to(cond).asInstanceOf[Exp[scala.Boolean]]
+    val condBool: Exp[scala.Boolean] = booleanTyp.to(cond)
     tp.from(IfThenElse(condBool, thenpC, elsepC))
   }
 }

@@ -12,7 +12,7 @@ trait Booleans extends Base {
 
   type Boolean <: BooleanOps
 
-  implicit def booleanTyp: Rep[Boolean]
+  implicit def booleanTyp: Rep[Boolean] { type U = scala.Boolean }
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
 
 }
@@ -30,7 +30,8 @@ trait BooleansImpl extends BaseExp with Booleans {
     def unary_! = Boolean(Not(e))
   }
 
-  implicit val booleanTyp = RepE[scala.Boolean, Boolean](Boolean)
-  implicit val booleanLift: Lift[scala.Boolean,Boolean] = booleanTyp
+  private val repE = RepE[scala.Boolean, Boolean](Boolean)
+  implicit val booleanTyp: Rep[Boolean] { type U = scala.Boolean } = repE
+  implicit val booleanLift: Lift[scala.Boolean,Boolean] = repE
 
 }
