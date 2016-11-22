@@ -10,7 +10,7 @@ import scala.reflect.SourceContext
 
 trait Functions extends Base {
 
-  implicit def fun[A:Manifest:Rep, B:Manifest:Rep](fun: A => B): A => B
+  implicit def fun[A:Rep, B:Rep](fun: A => B): A => B
 
 }
 
@@ -20,7 +20,7 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
 
-  case class Lambda[A:Manifest:Rep, B:Manifest:Rep](fun: A => B) extends (A => B) {
+  case class Lambda[A:Rep, B:Rep](fun: A => B) extends (A => B) {
 
     val rA = typ[A]
     implicit val mf = rA.m
@@ -43,7 +43,7 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   def unboxedFresh[A:Manifest] : Exp[A] = fresh[A]
 
-  implicit def fun[A:Manifest:Rep,B:Manifest:Rep](f: A => B):Lambda[A,B]  = 
+  implicit def fun[A:Rep,B:Rep](f: A => B):Lambda[A,B]  = 
       Lambda(f)
 
 
