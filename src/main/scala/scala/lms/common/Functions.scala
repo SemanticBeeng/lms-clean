@@ -10,7 +10,11 @@ import scala.reflect.SourceContext
 
 trait Functions extends Base {
 
-  implicit def fun[A:Rep, B:Rep](fun: A => B): A => B
+  implicit def fun[A:Rep, B:Rep](f: A => B): Lambda[A,B]
+
+  type Lambda[A,B] <: A => B
+
+  implicit def lambdaTyp[A:Rep, B:Rep]: Rep[Lambda[A,B]]
 
 }
 
@@ -20,13 +24,24 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
 
-
-  case class Lambda[A:Rep, B:Rep](fun: A => B) extends (A => B) {
-
+  implicit def lambdaTyp[A:Rep,B:Rep]: Rep[Lambda[A,B]] = new Rep[Lambda[A,B]] {
     val rA = typ[A]
-    val rB = typ[B]
+    val rB = typ[B]    
+    implicit val mf = rA.m
+    implicit val mf2 = rB.m
 
-    val lambda = doLambdaDef(fun)(rA, rB)
+    type U = rA.U => rB.U
+    def from(e:Exp[U]) = ???
+    def to(l:Lambda[A,B]) = l.lambda.asInstanceOf[U]
+    def m = manifest[U];
+  }
+
+  case class Lambda[A:Rep, B:Rep](f: A => B) extends (A => B) {
+
+    val rA:Rep[A] = typ[A]
+    val rB:Rep[B] = typ[B]
+
+    val lambda = doLambdaDef(f)(rA, rB)
 
     def apply(arg:A):B = {
       implicit val mf = rB.m
