@@ -5,12 +5,11 @@ import internal._
 
 import java.io.PrintWriter
 
-
 import scala.reflect.SourceContext
 
 trait Functions extends Base {
 
-  implicit def fun[A:Rep, B:Rep](f: A => B): Lambda[A,B]
+  def fun[A:Rep, B:Rep](f: A => B): Lambda[A,B]
 
   type Lambda[A,B] <: A => B
 
@@ -121,8 +120,6 @@ trait ScalaGenFunctions extends ScalaGenNested {
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-/*    case e@Lambda(y, x) =>
- */
 
     case e@LambdaDef(fun, x, y) =>
       emitValDef(sym, "{" + quote(x) + ": (" + remap(x.tp) + ") => ")
@@ -133,16 +130,6 @@ trait ScalaGenFunctions extends ScalaGenNested {
     case Apply(fun, arg) =>
       emitValDef(sym, quote(fun) + "(" + quote(arg) + ")")
 
-/*
-      emitValDef(sym, "{" + quote(x) + ": (" + remap(x.tp) + ") => ")
-      emitBlock(y)
-      stream.println(quote(getBlockResult(y)) + ": " + remap(y.tp))
-      stream.println("}")
-      emit
- */
-
-      
-      
 
     case _ => super.emitNode(sym, rhs)
   }
