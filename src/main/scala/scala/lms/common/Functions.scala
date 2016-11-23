@@ -75,7 +75,7 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   def unboxedFresh[A:Manifest] : Exp[A] = fresh[A]
 
-  implicit def fun[A:Rep,B:Rep](f: A => B):Lambda[A,B]  = 
+  def fun[A:Rep,B:Rep](f: A => B):Lambda[A,B]  = 
       Lambda(f)
 
 
