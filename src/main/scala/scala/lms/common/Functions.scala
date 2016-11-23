@@ -21,27 +21,13 @@ trait Functions extends Base {
 trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
   case class LambdaDef[A, B](f: Exp[A] => Exp[B], x:Exp[A], b:Block[B]) extends Def[A => B]
-
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
-
-  implicit def lambdaTyp[A:Rep,B:Rep]: Rep[Lambda[A,B]] = new Rep[Lambda[A,B]] {
-    val rA = typ[A]
-    val rB = typ[B]    
-    implicit val mf = rA.m
-    implicit val mf2 = rB.m
-
-    type U = rA.U => rB.U
-    def from(e:Exp[U]) = ???
-    def to(l:Lambda[A,B]) = l.lambda.asInstanceOf[U]
-    def m = manifest[U];
-  }
-
   case class Lambda[A:Rep, B:Rep](f: A => B) extends (A => B) {
 
     val rA:Rep[A] = typ[A]
     val rB:Rep[B] = typ[B]
 
-    val lambda = doLambdaDef(f)(rA, rB)
+    lazy val lambda = doLambdaDef(f)(rA, rB)
 
     def apply(arg:A):B = {
       implicit val mf = rB.m
@@ -49,6 +35,31 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
       rB.from(apply)
     }
   }
+    
+
+  implicit def lambdaTyp[A:Rep,B:Rep]: Rep[Lambda[A,B]] = new Rep[Lambda[A,B]] {
+    val rA = typ[A]
+    val rB = typ[B]    
+    implicit val mf = rA.m
+    implicit val mf2 = rB.m
+    val iA:rA.type = rA
+    val iB:rB.type = rB
+
+    type U = rA.U => rB.U
+
+    def from(e:Exp[rA.U => rB.U]) = new Lambda[A,B]((x:A) => ???){
+      override val rA:iA.type = iA
+      override val rB:iB.type = iB
+      override lazy val lambda = ???
+      override def apply(arg:A):B = {
+        rB.from(toAtom(Apply(e, rA.to(arg))))
+      }
+    }
+
+    def to(l:Lambda[A,B]) = l.lambda.asInstanceOf[Exp[U]]
+    def m = manifest[U];
+  }
+
 
   def doLambdaDef[A, B](fun: A => B)(rA: Rep[A], rB:Rep[B]) = {
 

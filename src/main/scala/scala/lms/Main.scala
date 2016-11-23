@@ -9,13 +9,14 @@ import compgraph._
 
 object Main extends App with ArithGraphExp with RichImpl with Compile {
 
-  def g(l:Int => Int, x:Int)(implicit m:  Rep[Lambda[Int, Int]]) =
+  def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
 
-  def f(p:Exp[scala.Int]):Exp[scala.Int] = {
+  def f(p:Exp[scala.Int])  = {
     val arg = intTyp.from(p)
-    val stagedApp = app _
-    val r = g(stagedApp, arg)
+    val b: Boolean = true
+    val stagedApp = if (b) fun(app) else fun(app)
+    val r = stagedApp(arg)
     intTyp.to(r)
   }
   
