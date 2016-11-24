@@ -6,6 +6,8 @@ import common._
 
 trait ArithNodes extends Nodes {
 
+  type Data 
+  
   def add(a:Data, b:Data): Data
   def mult(a:Data, b:Data): Data
   def div(a:Data, b:Data): Data

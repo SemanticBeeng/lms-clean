@@ -9,7 +9,7 @@ import scala.reflect.SourceContext
 
 trait Functions extends Base {
 
-  def fun[A:Rep, B:Rep](f: A => B): Lambda[A,B]
+  implicit def fun[A:Rep, B:Rep](f: A => B): Lambda[A,B]
 
   type Lambda[A,B] <: A => B
 
@@ -43,10 +43,9 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
     implicit val mf2 = rB.m
     val iA:rA.type = rA
     val iB:rB.type = rB
+    type Internal = rA.Internal => rB.Internal
 
-    type U = rA.U => rB.U
-
-    def from(e:Exp[rA.U => rB.U]) = new Lambda[A,B]((x:A) => ???){
+    def from(e:Exp[rA.Internal => rB.Internal]) = new Lambda[A,B]((x:A) => ???){
       override val rA:iA.type = iA
       override val rB:iB.type = iB
       override lazy val lambda = ???
@@ -55,8 +54,8 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
       }
     }
 
-    def to(l:Lambda[A,B]) = l.lambda.asInstanceOf[Exp[U]]
-    def m = manifest[U];
+    def to(l:Lambda[A,B]) = l.lambda.asInstanceOf[Exp[Internal]]
+    def m = manifest[Internal];
   }
 
 
@@ -64,18 +63,18 @@ trait FunctionsExp extends Functions with BaseExp with EffectExp {
 
     implicit val mf = rA.m
     implicit val mf2 = rB.m    
-    val x: Exp[rA.U] = unboxedFresh[rA.U]
+    val x: Exp[rA.Internal] = unboxedFresh[rA.Internal]
 
-    val fA = fun.compose((x:Exp[rA.U]) => rA.from(x))
-    val fB: Exp[rA.U] => Exp[rB.U] = fA.andThen((x:B) => rB.to(x))
+    val fA = fun.compose((x:Exp[rA.Internal]) => rA.from(x))
+    val fB: Exp[rA.Internal] => Exp[rB.Internal] = fA.andThen((x:B) => rB.to(x))
 
-    val b: Block[rB.U] = reifyEffects(fB(x))
+    val b: Block[rB.Internal] = reifyEffects(fB(x))
     toAtom(LambdaDef(fB, x, b))
   }
 
   def unboxedFresh[A:Manifest] : Exp[A] = fresh[A]
 
-  def fun[A:Rep,B:Rep](f: A => B):Lambda[A,B]  = 
+  implicit def fun[A:Rep,B:Rep](f: A => B):Lambda[A,B]  = 
       Lambda(f)
 
 

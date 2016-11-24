@@ -7,6 +7,7 @@ import scala.reflect.SourceContext
 import scala.annotation.implicitNotFound
 
 
+
 trait Base {
   // preliminaries
   @implicitNotFound("${T} is not a DSL type")
@@ -21,10 +22,20 @@ trait Base {
 
 
   trait Rep[T] {
-    type U
-    def from(e:Exp[U]): T
-    def to(x:T):Exp[U]
-    def m: Manifest[U]
+    type Internal
+    def from(e:Exp[Internal]): T
+    def to(x:T):Exp[Internal]
+    def m: Manifest[Internal]
+  }
+
+  trait BaseType {
+    type Staged
+    type StageOps[A]
+    type Base
+/*    implicit def rep: Rep[Staged] { type U = Base }
+    implicit def lift: Lift[scala.Int,Int]
+    implicit def ops:
+ */      
   }
 
 
@@ -43,7 +54,7 @@ trait BaseExp extends Base with Expressions with Blocks with Transforming {
   }
 
   case class RepE[A:Manifest,B <: Expressable[A]](f: Exp[A] => B) extends Rep[B] with Lift[A,B]{
-    type U = A
+    type Internal = A
     def from(x:Exp[A]) = f(x)
     def to(x:B) = x.e
     def lift(x:A):B = from(unit(x))

@@ -12,7 +12,7 @@ trait Booleans extends Base {
 
   type Boolean <: BooleanOps
 
-  implicit def booleanTyp: Rep[Boolean] { type U = scala.Boolean }
+  implicit def booleanTyp: Rep[Boolean] { type Internal = scala.Boolean }
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
 
 }
@@ -31,7 +31,7 @@ trait BooleansImpl extends BaseExp with Booleans {
   }
 
   private val repE = RepE[scala.Boolean, Boolean](Boolean)
-  implicit val booleanTyp: Rep[Boolean] { type U = scala.Boolean } = repE
+  implicit val booleanTyp: Rep[Boolean] { type Internal = scala.Boolean } = repE
   implicit val booleanLift: Lift[scala.Boolean,Boolean] = repE
 
 }

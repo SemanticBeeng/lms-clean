@@ -38,7 +38,7 @@ trait ArraysImpl extends BaseExp with Arrays {
 
   case class Array[T:Rep](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T] {
     val tp = typ[T]
-    val e = bleh.asInstanceOf[Exp[scala.Array[tp.U]]]
+    val e = bleh.asInstanceOf[Exp[scala.Array[tp.Internal]]]
     implicit val mf = tp.m
     def length = Int(ArrayLength(e))
     def apply(x: Int) = tp.from(toAtom(ArrayApply(e, x.e)))
@@ -53,11 +53,11 @@ trait ArraysImpl extends BaseExp with Arrays {
 
   implicit def arrayTyp[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
     val tp = typ[T]
-    type U = scala.Array[tp.U]
+    type Internal = scala.Array[tp.Internal]
     private implicit val tpm = tp.m
-    def from(e:Exp[U]) = Array(e.asInstanceOf[Exp[scala.Array[Any]]]);
-    def to(x:Array[T]) = x.e.asInstanceOf[Exp[U]]
-    def m = manifest[U]
+    def from(e:Exp[Internal]) = Array(e.asInstanceOf[Exp[scala.Array[Any]]]);
+    def to(x:Array[T]) = x.e.asInstanceOf[Exp[Internal]]
+    def m = manifest[Internal]
     override def toString = "Array["+typ[T]+"]"
   }
 
