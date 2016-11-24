@@ -7,6 +7,15 @@ import internal._
 import java.io.{File, PrintWriter}
 import compgraph._
 
+object Main2 extends App with Ints2Impl{
+
+  def f() = {
+    val b: scala.Int =  3 + 3
+    val a: Int = b + 2
+  }
+
+}
+
 object Main extends App with ArithGraphExp with RichImpl with Compile {
 
   def g[A:Rep](l:Int => Int, x:Int) =

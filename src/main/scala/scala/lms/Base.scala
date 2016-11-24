@@ -28,14 +28,11 @@ trait Base {
     def m: Manifest[Internal]
   }
 
-  trait BaseType {
-    type Staged
-    type StageOps[A]
-    type Base
-/*    implicit def rep: Rep[Staged] { type U = Base }
-    implicit def lift: Lift[scala.Int,Int]
-    implicit def ops:
- */      
+  trait BaseType[BaseT, Staged, Ops[_]] {
+    implicit def rep: Rep[Staged] { type Internal = BaseT }
+    implicit def lift: Lift[BaseT, Staged]
+    implicit def baseOp: Ops[BaseT]
+    implicit def stagedOp: Ops[Staged]    
   }
 
 
