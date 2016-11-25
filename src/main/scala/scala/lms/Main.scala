@@ -8,7 +8,7 @@ import java.io.{File, PrintWriter}
 import compgraph._
 
 
-object Main extends App with ArithGraph with RichImpl with Compile {
+object Main extends App with ArithGraph with RichOptImpl with Compile {
 
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
@@ -34,7 +34,7 @@ object Main extends App with ArithGraph with RichImpl with Compile {
 }
 
 trait Compile extends ScalaCompile {
-  self:RichImpl =>
+  self: RichExp =>
 
   dumpGeneratedCode = true
   val codegen =  new ScalaGenRich { val IR:self.type = self}

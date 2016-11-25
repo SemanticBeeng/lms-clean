@@ -7,7 +7,7 @@ import common._
 trait ArithNodes extends Nodes {
   self: Rich =>
 
-  override type Data =  Int
+  override type Data = Int
   
   case object AddNode extends Node {
     val inputSize = 2
@@ -63,7 +63,6 @@ trait ArithNodes extends Nodes {
 
 
 trait ArithGraph extends Graph with ArithNodes  {
-
   self: Rich =>
 
   def simpleCG = {
@@ -82,7 +81,7 @@ trait ArithGraph extends Graph with ArithNodes  {
   
   def app(a: Data) = {
     //simple(List(a, b))
-    funCG(List(a, a, a), true)
+    funCG(List(a, 0, 2), true)
 //    add(a, a)
   }
   
