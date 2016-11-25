@@ -7,16 +7,8 @@ import internal._
 import java.io.{File, PrintWriter}
 import compgraph._
 
-object Main2 extends App with Ints2Impl{
 
-  def f() = {
-    val b: scala.Int =  3 + 3
-    val a: Int = b + 2
-  }
-
-}
-
-object Main extends App with ArithGraphExp with RichImpl with Compile {
+object Main extends App with ArithGraph with RichImpl with Compile {
 
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
@@ -34,11 +26,11 @@ object Main extends App with ArithGraphExp with RichImpl with Compile {
   val r1 = staged(5)
   println(r1)
 
-
+/*
   println("Non staged execution:")
   val r2 = ArithGraphInt.app(2)
   println(r2)
-  
+ */
 }
 
 trait Compile extends ScalaCompile {
@@ -53,7 +45,7 @@ trait Prog {
 
   val run = (p: Int) =>  {
     val x: Int = 4
-    val y: Int = x + 3
+    val y: Int = 3 + x
     val z: Int = x*p+x-x
     val b: Boolean = true
     if (b)

@@ -1,0 +1,68 @@
+import simulacrum._
+
+trait Ints2 extends Base {
+
+  @typeclass trait Num[A]{
+    @op("+") def plus(x:A, y: A): A
+    @op("++") def plus2(x:A, y: A): A    
+  }
+
+  @typeclass trait IntOps[A] extends Num[A]{
+    def plus(x:A, y: A): A
+    def plus2(x:A, y: A): A    
+    @op("-") def minus(x:A, y: A): A    
+  }
+
+
+
+  type Int  
+
+//  implicit def intBaseOps: IntOps[scala.Int]
+  implicit def intStagedOps: IntOps[Int]
+  implicit def intRep: Rep[Int] { type Internal = scala.Int }
+  implicit def intLift: Lift[scala.Int,Int]
+  implicit def liftIntOps(target: scala.Int)(implicit f: Lift[scala.Int, Int]) = IntOps.ops.toAllIntOpsOps(f.lift(target))
+
+}
+
+trait Ints2Impl extends Ints2 with BaseExp {
+
+  case class Plus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
+  case class Minus(e1: Exp[scala.Int], e2: Exp[scala.Int]) extends Def[scala.Int]
+
+  case class Int(e: Exp[scala.Int]) extends Expressable[scala.Int] 
+
+
+  /*
+  implicit val intBaseOps: IntOps[scala.Int] = new IntOps[scala.Int] {
+    def plus2(x:scala.Int, y:scala.Int) = x + x + y    
+    def plus(x:scala.Int, y:scala.Int) = {println(x+y); x + y}
+    def minus(x:scala.Int, y:scala.Int) = x - y
+  }
+   */
+
+  implicit val intStagedOps: IntOps[Int] = new IntOps[Int] {
+    def plus(x:Int, y:Int) = Int(Plus(x.e, y.e))
+    def plus2(x:Int, y:Int) = Int(Plus(x.e, y.e))
+    def minus(x:Int, y:Int) = Int(Minus(x.e, y.e))
+  }
+
+  private val repE = RepE[scala.Int, Int](Int)
+  implicit val intRep: Rep[Int] { type Internal = scala.Int } = repE
+  implicit val intLift: Lift[scala.Int,Int] = repE
+  
+}
+
+/*object Ma extends App with Ints2Impl{
+
+  import IntOps.ops._
+
+  def f() = {
+    val b: scala.Int =  3 + 3
+    val a: Int = 4 + 2
+    val c: Int = 3 + a
+    val d: Int = a + 3    
+  }
+
+  f()
+}*/  

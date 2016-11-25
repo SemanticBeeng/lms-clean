@@ -28,12 +28,6 @@ trait Base {
     def m: Manifest[Internal]
   }
 
-  trait BaseType[BaseT, Staged, Ops[_]] {
-    implicit def rep: Rep[Staged] { type Internal = BaseT }
-    implicit def lift: Lift[BaseT, Staged]
-    implicit def baseOp: Ops[BaseT]
-    implicit def stagedOp: Ops[Staged]    
-  }
 
 
 /*  case class Rewrite[T:Rep](a:T, b:T)
@@ -68,7 +62,7 @@ trait EffectExp extends BaseExp with Effects {
     u.copy(mayRead = t.onlySyms(u.mayRead), mstRead = t.onlySyms(u.mstRead),
       mayWrite = t.onlySyms(u.mayWrite), mstWrite = t.onlySyms(u.mstWrite))
   }
-
+ 
   override def mirrorDef[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = e match {
     case Reflect(x, u, es) => Reflect(mirrorDef(x,f), mapOver(f,u), f(es))
     case Reify(x, u, es) => Reify(f(x), mapOver(f,u), f(es))

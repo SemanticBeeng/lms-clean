@@ -21,7 +21,7 @@ trait Blocks extends Expressions {
 }
 
 
-trait Effects extends Expressions with Blocks with Utils {
+trait Effects extends Expressions with Blocks {
 
   // TODO: transform over Summary currently lives in common/Base.scala. move it here?
   // --- context

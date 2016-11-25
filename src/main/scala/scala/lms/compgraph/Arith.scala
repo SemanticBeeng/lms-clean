@@ -5,72 +5,66 @@ import common._
 
 
 trait ArithNodes extends Nodes {
+  self: Rich =>
 
-  type Data 
+  override type Data =  Int
   
-  def add(a:Data, b:Data): Data
-  def mult(a:Data, b:Data): Data
-  def div(a:Data, b:Data): Data
-  def mod(a:Data, b:Data): Data  
-
-  def max(a:Data, b:Data): Data
-  def min(a:Data, b:Data): Data
-
-  def neg(a:Data): Data
-
-
   case object AddNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      add(input(0), input(1))
+      input(0) + input(1)
   }
 
   case object MinusNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      add(input(0), neg(input(1)))
+      input(0) - input(1)
   }
 
   case object ModNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      mod(input(0), input(1))
+      input(0) % input(1)
   }
 
   case object MultNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      mult(input(0), input(1))
+      input(0) * input(1)
   }
 
   case object DivNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      div(input(0), input(1))
+      input(0) / input(1)
   }
   
   case object MaxNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      max(input(0), input(1))
+      ???
+//      input(0) input(1))
   }
 
   case object MinNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      min(input(0), input(1))
+      ???
+//      min(input(0), input(1))
   }
 
   case object NegNode extends Node {
     val inputSize = 1
     def op(input: Input) =
-      neg(input(0))
+      0 - input(0)
   }
   
 }
 
 
 trait ArithGraph extends Graph with ArithNodes  {
+
+  self: Rich =>
 
   def simpleCG = {
     val l = List(GraphNode("ADD", AddNode, List("IN1", "IN2")))
@@ -95,9 +89,10 @@ trait ArithGraph extends Graph with ArithNodes  {
 
 }
 
+/*
 //Using staging
 trait ArithGraphExp extends ArithGraph with Base {
-  self: Rich => 
+  self: Rich =>
 
   type Data = Int
 
@@ -115,7 +110,9 @@ trait ArithGraphExp extends ArithGraph with Base {
   
 
 }
+*/
 
+/*
 //Not using staging
 object ArithGraphInt extends ArithGraph {
 
@@ -134,3 +131,4 @@ object ArithGraphInt extends ArithGraph {
 
 }
 
+*/

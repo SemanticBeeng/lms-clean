@@ -13,13 +13,11 @@ trait IfThenElse extends Base{
 
   def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A
 
-  /*
-  // HACK -- bug in scala-virtualized
+
   override def __ifThenElse[T](cond: => scala.Boolean, thenp: => T, elsep: => T) = cond match {
     case true => thenp
     case false => elsep
   }
-   */
 }
 
 
@@ -29,12 +27,16 @@ trait IfThenElsePureExp extends BaseExp with IfThenElse  {
   case class IfThenElse[T](cond: Exp[scala.Boolean], thenp: Exp[T], elsep: Exp[T]) extends Def[T]
 
   def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A = {
-    val tp = typ[A]
-    implicit val mf = tp.m
-    val thenpC = tp.to(thenp)
-    val elsepC = tp.to(elsep)
-    val condBool: Exp[scala.Boolean] = booleanTyp.to(cond)
-    tp.from(IfThenElse(condBool, thenpC, elsepC))
+      booleanTyp.to(cond) match {
+      case Const(true) => thenp
+      case Const(false) => elsep
+      case bool@_ =>
+        val tp = typ[A]
+        implicit val mf = tp.m
+        val thenpC = tp.to(thenp)
+        val elsepC = tp.to(elsep)
+        tp.from(IfThenElse(bool, thenpC, elsepC))        
+    }
   }
 }
 
@@ -51,14 +53,14 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
   
   case class IfThenElse[T](cond: Exp[scala.Boolean], thenp: Block[T], elsep: Block[T]) extends AbstractIfThenElse[T]
 
-/*  override def __ifThenElse[A:Rep,B](cond: Boolean, thenp: A, elsep: B)(implicit pos: SourceContext,  mB: Lift[B,A]): A = {
+  override def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A = {
     val tp = typ[A]
     implicit val mf = tp.m    
     val a = reifyEffectsHere(tp.to(thenp))
-    val b = reifyEffectsHere(tp.to(mB.to(elsep)))
+    val b = reifyEffectsHere(tp.to(elsep))
     tp.from(ifThenElse(cond,a,b))
   }
- */
+
   def ifThenElse[T:Manifest](cond: Boolean, thenp: Block[T], elsep: Block[T])(implicit pos: SourceContext) = {
     val ae = summarizeEffects(thenp)
     val be = summarizeEffects(elsep)
@@ -81,10 +83,9 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
 
   override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
     e match {
-      /*
     case Reflect(IfThenElse(c,a,b), u, es) => 
       if (f.hasContext)
-        __ifThenElse(f(c), f.reflectBlock(a), f.reflectBlock(b))
+       __ifThenElse(f(c), f.reflectBlock(a), f.reflectBlock(b))
       else
         reflectMirrored(Reflect(IfThenElse(f(c),f(a),f(b)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case IfThenElse(c,a,b) => 
@@ -92,18 +93,10 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
         __ifThenElse(f(c), f.reflectBlock(a), f.reflectBlock(b))
       else
         IfThenElse(f(c),f(a),f(b)) // FIXME: should apply pattern rewrites (ie call smart constructor)
-       */
+
     case _ => super.mirror(e,f)
     }
   }
-/*
-  override def mirror[A:Typ](e: Def[A], f: Transformer): Exp[A] = e match {
-    case Reflect(IfThenElse(c,a,b), u, es) => mirror(IfThenElse(c,a,b)) // discard reflect
-    case IfThenElse(c,a,b) => ifThenElse(f(c),f(a),f(b)) // f.apply[A](a: Block[A]): Exp[A] mirrors the block into the current context
-    case _ => super.mirror(e,f)
-  }  
-*/
-
 
 
   override def aliasSyms(e: Any): List[Sym[Any]] = e match {
@@ -131,13 +124,6 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
     case IfThenElse(c, t, e) => freqNormal(c) ++ freqCold(t) ++ freqCold(e)
     case _ => super.symsFreq(e)
   }
-
-/*
-  override def coldSyms(e: Any): List[Sym[Any]] = e match {
-    case IfThenElse(c, t, e) => syms(t) ++ syms(e)
-    case _ => super.coldSyms(e)
-  }
-*/
 
   override def boundSyms(e: Any): List[Sym[Any]] = e match {
     case IfThenElse(c, t, e) => effectSyms(t):::effectSyms(e)

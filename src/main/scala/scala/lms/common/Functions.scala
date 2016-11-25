@@ -17,7 +17,7 @@ trait Functions extends Base {
 
 }
 
-trait FunctionsExp extends Functions with BaseExp with EffectExp {
+trait FunctionsExp extends Functions with EffectExp {
 
   case class LambdaDef[A, B](f: Exp[A] => Exp[B], x:Exp[A], b:Block[B]) extends Def[A => B]
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
