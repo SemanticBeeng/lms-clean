@@ -14,7 +14,7 @@ trait IfThenElse extends Base{
   def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A
 
 
-  override def __ifThenElse[T](cond: => scala.Boolean, thenp: => T, elsep: => T) = cond match {
+  def __ifThenElse[T](cond: => scala.Boolean, thenp: => T, elsep: => T) = cond match {
     case true => thenp
     case false => elsep
   }
@@ -58,10 +58,10 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
     implicit val mf = tp.m    
     val a = reifyEffectsHere(tp.to(thenp))
     val b = reifyEffectsHere(tp.to(elsep))
-    tp.from(ifThenElse(cond,a,b))
+    tp.from(ifThenElse(booleanTyp.to(cond),a,b))
   }
 
-  def ifThenElse[T:Manifest](cond: Boolean, thenp: Block[T], elsep: Block[T])(implicit pos: SourceContext) = {
+  def ifThenElse[T:Manifest](cond: Exp[scala.Boolean], thenp: Block[T], elsep: Block[T])(implicit pos: SourceContext) = {
     val ae = summarizeEffects(thenp)
     val be = summarizeEffects(elsep)
     
@@ -72,8 +72,7 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
     // (see TestMutation, for now sticking to old behavior)
     
     ////reflectEffect(IfThenElse(cond,thenp,elsep), ae orElse be)
-    val condBool: Exp[scala.Boolean] = booleanTyp.to(cond).asInstanceOf[Exp[scala.Boolean]]    
-    reflectEffectInternal(IfThenElse(condBool,thenp,elsep), ae orElse be)
+    reflectEffectInternal(IfThenElse(cond,thenp,elsep), ae orElse be)
   }
   
   override def mirrorDef[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Def[A] = e match {
@@ -85,12 +84,12 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
     e match {
     case Reflect(IfThenElse(c,a,b), u, es) => 
       if (f.hasContext)
-       __ifThenElse(f(c), f.reflectBlock(a), f.reflectBlock(b))
+       ifThenElse(f(c), reifyEffectsHere(f.reflectBlock(a)), reifyEffectsHere(f.reflectBlock(b)))
       else
         reflectMirrored(Reflect(IfThenElse(f(c),f(a),f(b)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case IfThenElse(c,a,b) => 
       if (f.hasContext)
-        __ifThenElse(f(c), f.reflectBlock(a), f.reflectBlock(b))
+        ifThenElse(f(c), reifyEffectsHere(f.reflectBlock(a)), reifyEffectsHere(f.reflectBlock(b)))
       else
         IfThenElse(f(c),f(a),f(b)) // FIXME: should apply pattern rewrites (ie call smart constructor)
 
