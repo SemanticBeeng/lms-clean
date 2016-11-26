@@ -85,7 +85,7 @@ trait Derivate extends ForwardTransformer {
 }
  */
 trait IntsImpl extends IntsExp {
-  self: BooleansExp with IfThenElse =>
+  self: Booleans with IfThenElse =>
 
   protected def int_plus(e1: Exp[scala.Int], e2: Exp[scala.Int])  = IntPlus(e1, e2)
   protected def int_minus(e1: Exp[scala.Int], e2: Exp[scala.Int]) = IntMinus(e1, e2)
@@ -100,7 +100,7 @@ trait IntsImpl extends IntsExp {
 
 
 trait IntsOptImpl extends IntsImpl with EffectExp {
-  self: BooleansExp with IfThenElse =>
+  self: Booleans with IfThenElse =>
 
   override def int_plus(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
     case (Const(0), r) => r
