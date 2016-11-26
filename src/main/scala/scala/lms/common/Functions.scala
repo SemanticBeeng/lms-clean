@@ -13,7 +13,7 @@ trait Functions extends Base {
 
   type Lambda[A,B] <: A => B
 
-  implicit def lambdaTyp[A:Rep, B:Rep]: Rep[Lambda[A,B]]
+  implicit def lambdaRep[A:Rep, B:Rep]: Rep[Lambda[A,B]]
 
 }
 
@@ -23,8 +23,8 @@ trait FunctionsExp extends Functions with EffectExp {
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
   case class Lambda[A:Rep, B:Rep](f: A => B) extends (A => B) {
 
-    val rA:Rep[A] = typ[A]
-    val rB:Rep[B] = typ[B]
+    val rA:Rep[A] = rep[A]
+    val rB:Rep[B] = rep[B]
 
     lazy val lambda = doLambdaDef(f)(rA, rB)
 
@@ -36,9 +36,9 @@ trait FunctionsExp extends Functions with EffectExp {
   }
     
 
-  implicit def lambdaTyp[A:Rep,B:Rep]: Rep[Lambda[A,B]] = new Rep[Lambda[A,B]] {
-    val rA = typ[A]
-    val rB = typ[B]    
+  implicit def lambdaRep[A:Rep,B:Rep]: Rep[Lambda[A,B]] = new Rep[Lambda[A,B]] {
+    val rA = rep[A]
+    val rB = rep[B]    
     implicit val mf = rA.m
     implicit val mf2 = rB.m
     val iA:rA.type = rA

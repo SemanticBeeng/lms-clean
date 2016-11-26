@@ -20,9 +20,7 @@ trait Ord[A] {
 
   def >(y: A): B
   def <(y: A): B
-  def ===(y: A): B
 
-  def =!=(y: A) = !(self === y)
   def >=(y: A) = !(self < y) 
   def <=(y: A) = !(self > y) 
   

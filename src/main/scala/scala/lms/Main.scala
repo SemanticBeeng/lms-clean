@@ -14,10 +14,10 @@ object Main extends App with ArithGraphExp with RichOptImpl with Compile {
     l(x)*2
 
   def f(p:Exp[scala.Int])  = {
-    val arg = intTyp.from(p)
+    val arg = intRep.from(p)
     val stagedApp = fun(app)
     val r = stagedApp(arg)
-    intTyp.to(r)
+    intRep.to(r)
   }
   
   println("Staged execution:")  

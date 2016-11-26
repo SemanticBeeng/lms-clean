@@ -9,7 +9,7 @@ trait Arrays extends Base {
 
   def NewArray[T:Rep](x: Int): Array[T]
 
-  implicit def arrayTyp[T:Rep]: Rep[Array[T]]
+  implicit def arrayRep[T:Rep]: Rep[Array[T]]
 
   trait ArrayOps[T] {
     def length: Int
@@ -35,7 +35,7 @@ trait ArraysExp extends BaseExp with Arrays {
   def array[T:Rep](x: Exp[scala.Array[Any]]): Array[T]
 
   def NewArray[T:Rep](x: Int): Array[T] = {
-    val tp = typ[T]
+    val tp = rep[T]
     val an: Exp[scala.Array[Any]]  = toAtom(ArrayNew(x.e))
     array[T](an)
   }
@@ -47,7 +47,7 @@ trait ArraysImpl extends ArraysExp  {
   this: IntsExp with UnitsExp =>
 
   case class Array[T:Rep](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T]  {
-    val tp = typ[T]
+    val tp = rep[T]
     val e = bleh.asInstanceOf[Exp[scala.Array[tp.Internal]]]
     implicit val mf = tp.m
     def length = int(ArrayLength(e))
@@ -56,14 +56,14 @@ trait ArraysImpl extends ArraysExp  {
   }
 
 
-  implicit def arrayTyp[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
-    val tp = typ[T]
+  implicit def arrayRep[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
+    val tp = rep[T]
     type Internal = scala.Array[tp.Internal]
     private implicit val tpm = tp.m
     def from(e:Exp[Internal]) = array(e.asInstanceOf[Exp[scala.Array[Any]]]);
     def to(x:Array[T]) = x.e.asInstanceOf[Exp[Internal]]
     def m = manifest[Internal]
-    override def toString = "Array["+typ[T]+"]"
+    override def toString = "Array["+rep[T]+"]"
   }
 
   def array[T:Rep](x: Exp[scala.Array[Any]]) = Array[T](x)  
@@ -75,7 +75,7 @@ trait ArraysOptImpl extends ArraysExp with EffectExp{
   this: IntsExp with UnitsExp =>
 
   case class Array[T:Rep](bleh: Exp[scala.Array[Any]]) extends ArrayOps[T] {
-    val tp = typ[T]
+    val tp = rep[T]
     val e = bleh.asInstanceOf[Exp[scala.Array[tp.Internal]]]
     implicit val mf = tp.m
     def length = int(ArrayLength(e))
@@ -84,14 +84,14 @@ trait ArraysOptImpl extends ArraysExp with EffectExp{
   }
 
 
-  implicit def arrayTyp[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
-    val tp = typ[T]
+  implicit def arrayRep[T:Rep]: Rep[Array[T]] = new Rep[Array[T]] {
+    val tp = rep[T]
     type Internal = scala.Array[tp.Internal]
     private implicit val tpm = tp.m
     def from(e:Exp[Internal]) = array(e.asInstanceOf[Exp[scala.Array[Any]]]);
     def to(x:Array[T]) = x.e.asInstanceOf[Exp[Internal]]
     def m = manifest[Internal]
-    override def toString = "Array["+typ[T]+"]"
+    override def toString = "Array["+rep[T]+"]"
   }
 
   def array[T:Rep](x: Exp[scala.Array[Any]]) = Array[T](x)

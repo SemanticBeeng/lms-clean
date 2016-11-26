@@ -38,7 +38,7 @@ trait Base {
 
 trait BaseExp extends Base with Expressions with Blocks with Transforming {
 
-  def typ[T:Rep] = implicitly[Rep[T]]
+  def rep[T:Rep] = implicitly[Rep[T]]
 
   trait Expressable[A] {
     def e: Exp[A]
@@ -80,8 +80,10 @@ trait EffectExp extends BaseExp with Effects {
 
 }
 
+trait BaseFatExp extends BaseExp with FatExpressions with FatTransforming
 
 trait ScalaGenBase extends ScalaCodegen
+
 trait ScalaGenNested extends ScalaNestedCodegen with ScalaGenBase
 
 trait ScalaGenFat extends ScalaFatCodegen with ScalaGenBase
