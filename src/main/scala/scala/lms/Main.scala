@@ -8,15 +8,14 @@ import java.io.{File, PrintWriter}
 import compgraph._
 
 
-object Main extends App with ArithGraph with RichOptImpl with Compile {
+object Main extends App with ArithGraphExp with RichOptImpl with Compile {
 
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
 
   def f(p:Exp[scala.Int])  = {
     val arg = intTyp.from(p)
-    val b: Boolean = true
-    val stagedApp = if (b) fun(app) else fun(app)
+    val stagedApp = fun(app)
     val r = stagedApp(arg)
     intTyp.to(r)
   }
@@ -26,11 +25,11 @@ object Main extends App with ArithGraph with RichOptImpl with Compile {
   val r1 = staged(5)
   println(r1)
 
-/*
+
   println("Non staged execution:")
-  val r2 = ArithGraphInt.app(2)
+  val r2 = ArithGraphInt.app(5)
   println(r2)
- */
+
 }
 
 trait Compile extends ScalaCompile {

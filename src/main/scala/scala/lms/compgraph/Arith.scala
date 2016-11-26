@@ -5,9 +5,7 @@ import common._
 
 
 trait ArithNodes extends Nodes {
-  self: Rich =>
-
-  override type Data = Int
+  type Data <: Num[Data]
   
   case object AddNode extends Node {
     val inputSize = 2
@@ -42,28 +40,26 @@ trait ArithNodes extends Nodes {
   case object MaxNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      ???
-//      input(0) input(1))
+      input(0) max input(1)
   }
 
   case object MinNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      ???
-//      min(input(0), input(1))
+      input(0) min input(1)      
   }
 
-  case object NegNode extends Node {
-    val inputSize = 1
+  case class ConstantNode(c: Data) extends Node {
+    val inputSize = 0
     def op(input: Input) =
-      0 - input(0)
-  }
+      c
+
+    }
   
 }
 
 
 trait ArithGraph extends Graph with ArithNodes  {
-  self: Rich =>
 
   def simpleCG = {
     val l = List(GraphNode("ADD", AddNode, List("IN1", "IN2")))
@@ -79,55 +75,61 @@ trait ArithGraph extends Graph with ArithNodes  {
     newGraph(l, 3, "ADD3")
   }
   
-  def app(a: Data) = {
-    //simple(List(a, b))
-    funCG(List(a, 0, 2), true)
-//    add(a, a)
-  }
   
 
 }
 
-/*
-//Using staging
+
 trait ArithGraphExp extends ArithGraph with Base {
   self: Rich =>
 
   type Data = Int
 
-  def add(a: Int, b:Int) = a + b
-
-  def mult(a: Int, b: Int) = a*b
-  def div(a:Int, b:Int) = a/b
-  def mod(a:Int, b:Int) = a%b  
-
-  //TODO  
-  def max(a:Int, b:Int) = ???
-  def min(a:Int, b:Int) = ???
-
-  def neg(a:Int) = 0 - a
+  def app(a: Data) = {
+    //simple(List(a, b))
+    funCG(List(a, a, a), true)
+//    add(a, a)
+  }
   
-
+  
 }
-*/
 
-/*
+
+
 //Not using staging
 object ArithGraphInt extends ArithGraph {
 
-  type Data = Int
+  type Data = IntNum
 
-  def add(a:Int, b:Int) = a + b
-  def mult(a: Int, b: Int) = a*b
-  def div(a:Int, b:Int) = a/b
-  def mod(a:Int, b:Int) = a%b  
+  case class BooleanO(x: Boolean) extends BooleanOps[BooleanO] {
+    type A = BooleanO
+    def &&(y: => A): A = BooleanO(x && y.x)
+    def ||(y: => A): A = BooleanO(x || y.x)
+    def unary_! : A = BooleanO(!x)
+  }
 
-  def max(a:Int, b:Int) = a.max(b)
-  def min(a:Int, b:Int) = a.min(b)
+  case class IntNum(x: Int) extends Num[IntNum] {
+    type A = IntNum
+    override type B = BooleanO
+    def +(y: A): A = IntNum(x + y.x)
+    def -(y: A): A = IntNum(x - y.x)
+    def *(y: A): A = IntNum(x * y.x)
+    def /(y: A): A = IntNum(x / y.x)
+    def %(y: A): A = IntNum(x % y.x)
+    def ===(y: A): B = BooleanO(x == y.x)
+    def >(y: A): B = BooleanO(x > y.x)
+    def <(y: A): B = BooleanO(x < y.x)
+    def min(y: A): A = IntNum(x.min(y.x))
+    def max(y: A): A = IntNum(x.max(y.x))    
+  }
 
-  def neg(a:Int) = -a
+  def app(b: Int) = {
+    val a = IntNum(b)
+    //simple(List(a, b))
+    funCG(List(a, a, a), true)
+//    add(a, a)
+  }
   
-
 }
 
-*/
+

@@ -26,5 +26,7 @@ trait Ord[A] {
   def >=(y: A) = !(self < y) 
   def <=(y: A) = !(self > y) 
   
+  def min(x: A): A
+  def max(x: A): A  
 
 }

@@ -3,7 +3,6 @@ package common
 
 import scala.reflect.SourceContext
 
-
 trait Ints extends Base {
   self: Booleans with IfThenElse =>
 
