@@ -70,9 +70,16 @@ trait GenericCodegen extends BlockTraversal {
       val targs = m.typeArguments
       if (targs.length > 0) {
         val ms = m.toString
-        ms.take(ms.indexOf("[")+1) + targs.map(tp => remap(tp)).mkString(", ") + "]"
+        //RUBFIX
+        val container = ms.take(ms.indexOf("[")+1) 
+        val inners = targs.map(tp => remap(tp)).mkString(", ")
+        if (container.contains("$Exp["))
+          inners
+        else
+          container + inners + "]"
       }
-      else m.toString
+      else 
+        m.toString
   }
   def remapImpl[A](m: Manifest[A]): String = remap(m)
   //def remapVar[A](m: Manifest[Variable[A]]) : String = remap(m.typeArguments.head)
@@ -162,6 +169,7 @@ trait GenericCodegen extends BlockTraversal {
     case Const(c: Char) => "'"+(""+c).replace("'", "\\'").replace("\n", "\\n")+"'"
     case Const(f: Float) => "%1.10f".format(f) + "f"
     case Const(l: Long) => l.toString + "L"
+    case Const(l: List[Exp[_]]) => "List(" + l.map(quote).mkString(",") + ")"
     case Const(null) => "null"
     case Const(z) => z.toString
     case Sym(n) => "x"+n

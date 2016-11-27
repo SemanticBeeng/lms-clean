@@ -67,7 +67,6 @@ trait FunctionsExp extends Functions with EffectExp {
 
     val fA = fun.compose((x:Exp[rA.Internal]) => rA.from(x))
     val fB: Exp[rA.Internal] => Exp[rB.Internal] = fA.andThen((x:B) => rB.to(x))
-
     val b: Block[rB.Internal] = reifyEffects(fB(x))
     toAtom(LambdaDef(fB, x, b))
   }

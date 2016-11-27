@@ -4,49 +4,74 @@ package compgraph
 import common._
 
 
-trait ArithNodes extends Nodes {
+trait ArithNodes extends DerivableNodes {
   type Data <: Num[Data]
-  
+
   case object AddNode extends Node {
     val inputSize = 2
     def op(input: Input) =
       input(0) + input(1)
+
+    def d(input: Input) =
+      List(one, one)    
   }
 
   case object MinusNode extends Node {
     val inputSize = 2
     def op(input: Input) =
       input(0) - input(1)
+
+    def d(input: Input) =
+      List(one, zero-one)
+    
   }
 
   case object ModNode extends Node {
     val inputSize = 2
     def op(input: Input) =
       input(0) % input(1)
+
+    def d(input: Input) =
+      ???
+
   }
 
   case object MultNode extends Node {
     val inputSize = 2
     def op(input: Input) =
       input(0) * input(1)
+
+    def d(input: Input) =
+      List(input(1), input(0))
   }
 
   case object DivNode extends Node {
     val inputSize = 2
-    def op(input: Input) =
+    def op(input: Input) =      
       input(0) / input(1)
+
+    def d(input: Input) =
+      List(one/input(1), (zero-input(0))/input(1)/input(1))    
   }
   
   case object MaxNode extends Node {
     val inputSize = 2
     def op(input: Input) =
       input(0) max input(1)
+
+    def d(input: Input) =
+      ???
+    
   }
 
   case object MinNode extends Node {
     val inputSize = 2
     def op(input: Input) =
-      input(0) min input(1)      
+      input(0) min input(1)
+
+    def d(input: Input) =
+      ???
+    
   }
 
   case class ConstantNode(c: Data) extends Node {
@@ -54,12 +79,16 @@ trait ArithNodes extends Nodes {
     def op(input: Input) =
       c
 
+    def d(input: Input) =
+      List()
+
+
     }
   
 }
 
 
-trait ArithGraph extends Graph with ArithNodes  {
+trait ArithGraph extends DerivableGraph with ArithNodes  {
 
   def simpleCG = {
     val l = List(GraphNode("ADD", AddNode, List("IN1", "IN2")))
@@ -85,9 +114,13 @@ trait ArithGraphExp extends ArithGraph with Base {
 
   type Data = Int
 
+  lazy val zero: Int = 0
+  lazy val one: Int = 1
+
   def app(a: Data) = {
     //simple(List(a, b))
-    funCG(List(a, a, a), true)
+    lift(funCG.backpropagate(List(a, a, a)))(listLift[Int])
+//    funCG(List(a, a, a), true)
 //    add(a, a)
   }
   
@@ -100,6 +133,9 @@ trait ArithGraphExp extends ArithGraph with Base {
 object ArithGraphInt extends ArithGraph {
 
   type Data = IntNum
+
+  val zero = IntNum(0)
+  val one = IntNum(1)
 
   case class BooleanO(x: Boolean) extends BooleanOps[BooleanO] {
     type A = BooleanO

@@ -19,7 +19,6 @@ trait Ints extends Base {
   implicit def intRep: Rep[Int] { type Internal = scala.Int }
   implicit def intLift: Lift[scala.Int,Int]
 
-
 }
 
 trait IntsExp extends BaseExp with Ints {
@@ -67,23 +66,23 @@ trait IntsExp extends BaseExp with Ints {
   protected def int_gt(e1: Exp[scala.Int], e2: Exp[scala.Int]):    Exp[scala.Boolean]
   protected def int_lt(e1: Exp[scala.Int], e2: Exp[scala.Int]):    Exp[scala.Boolean]
 }
+
+//trait Derivate extends ForwardTransformer with BaseFatExp with RichExp {
+
 /*
-trait Derivate extends ForwardTransformer {
-
-//  val IR: RichExp
-//  import IR._
-
   override def transformExp[T](s: Exp[T]): Exp[T] = s match {
     case Const(s) => Const(0)
     case _ => super.transformExp(s)
   }
-  
+ */
+  /*
   def transformDef[T](d: Def[T]): Exp[T] = d match {
-    case Plus(a,b) => Plus(transformExp(a), transformExp(b))
+    case IntPlus(a,b) => IntPlus(transformDef(a), transformDef(b))
     case _ => super.transformDef(d)
   }
-}
- */
+   */
+//}
+ 
 trait IntsImpl extends IntsExp {
   self: Booleans with IfThenElse =>
 

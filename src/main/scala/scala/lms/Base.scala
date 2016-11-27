@@ -5,7 +5,7 @@ import internal._
 import scala.reflect.SourceContext
 
 import scala.annotation.implicitNotFound
-
+import scala.collection.generic.FilterMonadic
 
 
 trait Base {
@@ -17,9 +17,13 @@ trait Base {
     def lift(x:A):B
   }
 
+  trait LiftF[A[_],B[_]] {
+    def liftF[T:Rep](x:A[T]):B[T]
+  }
+  
   implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def lift(x:T) = x }
-  implicit def lift[T,U](x:T)(implicit e: Lift[T,U], rep:Rep[U]): U = e.lift(x)
-
+  implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.lift(x)
+  implicit def liftF[T[V],U[V],V:Rep](x:T[V])(implicit e: LiftF[T,U]): U[V] = e.liftF(x)  
 
   trait Rep[T] {
     type Internal
@@ -40,6 +44,7 @@ trait BaseExp extends Base with Expressions with Blocks with Transforming {
 
   def rep[T:Rep] = implicitly[Rep[T]]
 
+
   trait Expressable[A] {
     def e: Exp[A]
   }
@@ -51,6 +56,27 @@ trait BaseExp extends Base with Expressions with Blocks with Transforming {
     def lift(x:A):B = from(unit(x))
     def m = manifest[A]
   }
+
+
+/*
+  def repF[T: Rep] = {
+    val repT = rep[T]
+    type I = repT.Internal
+    def rep[A[_]:Manifest, B[repT.T] <: Expressable[A[repT.T]]]()
+    rep
+  }
+ */
+  //  def repF[T, A[rep.T]:Manifest, B[rep.T] <: Expressable[A[rep.T]]](f: Exp[A[rep.T]] => B[T])(implicit rep: Rep[T]) = ()/*new Rep,] extends Rep[B[T]] with Lift[A[T],B[T]]{
+  /*
+    implicit val tp = rep[T]
+    private implicit val tpm = tp.m    
+    type Internal = A[tp.Internal]
+    def from(x:Exp[Internal]) = f(x)
+    def to(x:B[T]) = x.e
+    def lift(x:A[T]):B[T] = from(unit(x))
+    def m = manifest[A[T]]
+  }*/
+  
   
 
 }

@@ -11,7 +11,7 @@ import scala.lms.internal.{GenericNestedCodegen, GenericFatCodegen, GenerationFa
 trait IfThenElse extends Base{
   this: Booleans =>
 
-  def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A
+  def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A = __ifThenElse(cond, thenp, elsep)
 
 
   def __ifThenElse[T](cond: => scala.Boolean, thenp: => T, elsep: => T) = cond match {
@@ -26,7 +26,7 @@ trait IfThenElsePureExp extends BaseExp with IfThenElse  {
 
   case class IfThenElse[T](cond: Exp[scala.Boolean], thenp: Exp[T], elsep: Exp[T]) extends Def[T]
 
-  def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A = {
+  override def __ifThenElse[A:Rep](cond: Boolean, thenp: => A, elsep: => A)(implicit pos: SourceContext): A = {
       booleanRep.to(cond) match {
       case Const(true) => thenp
       case Const(false) => elsep
@@ -130,19 +130,19 @@ trait IfThenElseExp extends IfThenElse with EffectExp {
   }
 
 }
-/*
+
 trait IfThenElseFatExp extends IfThenElseExp with BaseFatExp {
   self: Booleans =>
 
   abstract class AbstractFatIfThenElse extends FatDef {
-    val cond: Exp[Boolean]
+    val cond: Exp[scala.Boolean]
     val thenp: List[Block[Any]]
     val elsep: List[Block[Any]]
     
     var extradeps: List[Exp[Any]] = Nil //HACK
   }
 
-  case class SimpleFatIfThenElse(cond: Exp[Boolean], thenp: List[Block[Any]], elsep: List[Block[Any]]) extends AbstractFatIfThenElse
+  case class SimpleFatIfThenElse(cond: Exp[scala.Boolean], thenp: List[Block[Any]], elsep: List[Block[Any]]) extends AbstractFatIfThenElse
 
 /* HACK */
 
@@ -188,7 +188,8 @@ trait IfThenElseFatExp extends IfThenElseExp with BaseFatExp {
 }
 
 
-trait IfThenElseExpOpt extends IfThenElseExp { this: BooleansExp with EqualExpBridge =>
+trait IfThenElseExpOpt extends IfThenElseExp {
+  this: BooleansExp with EqualsExp =>
   
   //TODO: eliminate conditional if both branches return same value!
 
@@ -196,15 +197,16 @@ trait IfThenElseExpOpt extends IfThenElseExp { this: BooleansExp with EqualExpBr
   // 'de-reify' blocks in case we rewrite if(true) to thenp. 
   // TODO: make reflect(Reify(..)) do the right thing
   
-  override def __ifThenElse[T:Typ](cond: Rep[Boolean], thenp: => Rep[T], elsep: => Rep[T])(implicit pos: SourceContext) = cond match {
+  override def __ifThenElse[T:Rep](cond: Boolean, thenp: => T, elsep: => T)(implicit pos: SourceContext) = booleanRep.to(cond) match {
     case Const(true) => thenp
     case Const(false) => elsep
-    case Def(BooleanNegate(a)) => __ifThenElse(a, elsep, thenp)
-    case Def(e@NotEqual(a,b)) => __ifThenElse(equals(a,b)(e.mA,e.mB,pos), elsep, thenp)
+    case Def(BoolNot(a)) => __ifThenElse(boolean(a), elsep, thenp)
+    case Def(e@NotEqual(a,b)) => __ifThenElse(boolean(equal(a,b)(pos)), elsep, thenp)
     case _ =>
       super.__ifThenElse(cond, thenp, elsep)
   }
 }
+
 
 trait BaseGenIfThenElse extends GenericNestedCodegen {
   val IR: IfThenElseExp
@@ -230,7 +232,7 @@ trait BaseGenIfThenElseFat extends BaseGenIfThenElse with GenericFatCodegen {
 }
 
 
-trait ScalaGenIfThenElse extends ScalaGenEffect with BaseGenIfThenElse {
+trait ScalaGenIfThenElse extends ScalaGenNested with BaseGenIfThenElse {
   import IR._
  
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
@@ -264,7 +266,7 @@ trait ScalaGenIfThenElseFat extends ScalaGenIfThenElse with ScalaGenFat with Bas
   }
 
 }
-*/
+
 
 trait ScalaGenIfThenElsePure extends ScalaGenNested {
   val IR: IfThenElsePureExp with Effects

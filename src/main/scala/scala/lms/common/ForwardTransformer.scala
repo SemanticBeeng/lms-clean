@@ -1,4 +1,3 @@
-/*
 package scala.lms
 package common
 
@@ -172,4 +171,4 @@ trait WorklistTransformer extends ForwardTransformer { // need backward version,
   }
 
 }
-*/
+

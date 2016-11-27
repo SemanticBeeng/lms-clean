@@ -7,6 +7,7 @@ trait Nodes {
   type Input = List[Data]
   type Output = Data
 
+
   trait Node {
 
     def inputSize: Int
@@ -16,22 +17,66 @@ trait Nodes {
       op(input)
     }
 
+
     protected def op(input: Input): Output
+
 
   }
 
-  case object OutputNode extends Node {
+  trait OutputNode extends Node {
+
     val inputSize = 1
     def op(input: Input) =
       input.head
+  
   }
 
-  case object InputNode extends Node {
+  def OutputNode() = new OutputNode {}
+
+  trait InputNode extends Node {
     val inputSize = 0
     def op(input: Input) =
       throw new Exception("Is not a processing node")
   }
 
+  def InputNode() = new OutputNode {}  
+
 }
 
 
+trait DerivableNodes extends Nodes {
+
+  def zero: Data
+  def one: Data
+
+  trait Node extends super.Node {
+
+    def derivative(input: Input) = {
+      require(input.length == inputSize)
+      val r = d(input)
+      require(r.length == inputSize)
+      r
+    }
+
+    protected def d(input: Input): List[Data]    
+    
+  }
+
+  trait OutputNode extends super.OutputNode {
+    
+    def d(input: Input) =
+      List(one)
+  }
+
+  override def OutputNode() = new OutputNode {}
+
+  trait InputNode extends super.InputNode {
+
+    def d(input: Input) =
+      throw new Exception("Is not a processing node")
+  }
+
+  override def InputNode() = new OutputNode {}
+  
+
+}
