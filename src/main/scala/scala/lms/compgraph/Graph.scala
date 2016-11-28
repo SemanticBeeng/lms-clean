@@ -3,23 +3,60 @@ package compgraph
 
 import collection.mutable.Queue
 
+trait Graphs {
 
-trait Graph {
-  nodes: Nodes =>
-  import nodes._
+  type Data
+  type Input = List[Data]
+  type Output = Data
+  type G <: Graph 
+  type N <: Node
 
-  type R = (Node, List[String])
-  type G <: Graph
-  case class GraphNode(name: String, n: Node, inputs: List[String])
+  type R = (N, List[String])
 
-  def newGraph(l: List[GraphNode], inputSize:Int, outInput: String): G = {
+
+  trait Node {
+
+    def inputSize: Int
+
+    def output(input: Input) = {
+      require(input.length == inputSize)
+      op(input)
+    }
+
+    protected def op(input: Input): Output
+  
+  }
+
+  trait OutputNode extends Node {
+
+    val inputSize = 1
+    def op(input: Input) =
+      input.head
+  
+  }
+
+  trait InputNode extends Node {
+    val inputSize = 0
+    def op(input: Input) =
+      throw new Exception("Is not a processing node")
+  }
+
+  def OutputNode() :N
+  def InputNode(): N
+
+
+  case class GraphNode(name: String, n:N, inputs:List[String])
+
+
+
+  def newGraph(l: List[GraphNode], inputSize:Int, outInput: String):G = {
     var m: Map[String, R] = Map(("OUT", (OutputNode(), List(outInput))))
     (1 to inputSize).foreach(x => m += (("IN"+x, (InputNode(), List()))))
     l.foreach(x => m += ((x.name, (x.n, x.inputs))))
     Graph(m, inputSize)
   }
 
-  def Graph(m: Map[String, R], inputSize: Int): G
+  def Graph(m: Map[String, R], iS: Int):G 
 
   trait Graph {
 
@@ -64,43 +101,25 @@ trait Graph {
     }
   }
   
+  
+
 }
 
-trait NonDerivableGraph extends Graph {
-  self: Nodes =>
 
+
+trait GraphImpl extends Graphs{
+
+  type N = Node
   type G = Graph
 
-  def Graph(m: Map[String, R], iS: Int) = new Graph {
-    def nodes = m
+  def OutputNode():N = new OutputNode {}  
+  def InputNode():N = new InputNode {}
+  
+
+  def Graph(m: Map[String, R], iS: Int):G = new Graph {
     def inputSize = iS
+    def  nodes = m
   }
   
 
-}
-trait DerivableGraph extends Graph {
-  self: DerivableNodes =>
-
-  type G = Graph
-
-
-  trait Graph extends super.Graph {
-    def backpropagate(input: List[Data], dbg:Boolean = false): List[Data] = {
-      val datas = forward(input, dbg)
-      val q = new Queue[String]()
-      q.enqueue("OUT")
-      while(!q.isEmpty) {
-        q.dequeue()
-      }
-      List(zero)
-    }
-  }
-  
-  def Graph(m: Map[String, R], iS: Int):Graph = new Graph {
-    def nodes = m
-    def inputSize = iS 
-  }
-
-  override def newGraph(l: List[GraphNode], inputSize:Int, outInput: String): Graph =
-    super.newGraph(l, inputSize, outInput)
 }

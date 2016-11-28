@@ -1,4 +1,4 @@
-package scala.lms
+/*package scala.lms
 package compgraph
 
 import common._
@@ -40,3 +40,4 @@ trait WeightedNodes extends Nodes {
   }
 
 }
+ */

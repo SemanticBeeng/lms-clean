@@ -12,7 +12,7 @@ trait Prog extends Rich with ArithGraphExp {
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
 
-  val f: Int => List[Int] = (arg:Int) =>  {
+  val f = (arg:Int) =>  {
     val stagedApp = fun(app)
     stagedApp(arg)
   }
@@ -35,7 +35,7 @@ object Main extends App with ArithGraphExp with RichOptImpl with Compile with Pr
 
   val exec = scala.List(
 //    ("Prog", smallProg, 1)
-    ("Staged execution", f, 1)
+    ("Staged execution", f, 3)
   )
 
   exec.foreach { case (title, f, arg) => 

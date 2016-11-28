@@ -3,11 +3,12 @@ package compgraph
 
 import common._
 
+trait ArithGraphs extends DerivableGraphs {
 
-trait ArithNodes extends DerivableNodes {
-  type Data <: Num[Data]
 
-  case object AddNode extends Node {
+  trait ArithNode extends DerivableNode
+
+  case object AddNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) + input(1)
@@ -16,7 +17,7 @@ trait ArithNodes extends DerivableNodes {
       List(one, one)    
   }
 
-  case object MinusNode extends Node {
+  case object MinusNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) - input(1)
@@ -26,7 +27,7 @@ trait ArithNodes extends DerivableNodes {
     
   }
 
-  case object ModNode extends Node {
+  case object ModNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) % input(1)
@@ -36,16 +37,17 @@ trait ArithNodes extends DerivableNodes {
 
   }
 
-  case object MultNode extends Node {
+  case object TimeNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) * input(1)
 
-    def d(input: Input) =
+    def d(input: Input) = {
       List(input(1), input(0))
+    }
   }
 
-  case object DivNode extends Node {
+  case object DivNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =      
       input(0) / input(1)
@@ -54,7 +56,7 @@ trait ArithNodes extends DerivableNodes {
       List(one/input(1), (zero-input(0))/input(1)/input(1))    
   }
   
-  case object MaxNode extends Node {
+  case object MaxNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) max input(1)
@@ -64,7 +66,7 @@ trait ArithNodes extends DerivableNodes {
     
   }
 
-  case object MinNode extends Node {
+  case object MinNode extends ArithNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) min input(1)
@@ -74,7 +76,7 @@ trait ArithNodes extends DerivableNodes {
     
   }
 
-  case class ConstantNode(c: Data) extends Node {
+  case class ConstantNode(c: Data) extends ArithNode {
     val inputSize = 0
     def op(input: Input) =
       c
@@ -88,7 +90,7 @@ trait ArithNodes extends DerivableNodes {
 }
 
 
-trait ArithGraph extends DerivableGraph with ArithNodes  {
+trait ArithGraph extends ArithGraphs  {
 
   def simpleCG = {
     val l = List(GraphNode("ADD", AddNode, List("IN1", "IN2")))
@@ -98,7 +100,7 @@ trait ArithGraph extends DerivableGraph with ArithNodes  {
   def funCG = {
     val l = List(
       GraphNode("ADD", AddNode, List("IN1", "IN2")),
-      GraphNode("ADD2", AddNode, List("ADD", "ADD")),
+      GraphNode("ADD2", TimeNode, List("ADD", "ADD")),
       GraphNode("ADD3", AddNode, List("ADD2", "IN3"))              
     )
     newGraph(l, 3, "ADD3")
@@ -119,7 +121,7 @@ trait ArithGraphExp extends ArithGraph with Base {
 
   def app(a: Data) = {
     //simple(List(a, b))
-    lift(funCG.backpropagate(List(a, a, a)))(listLift[Int])
+    lift(funCG.backpropagate(List(a, a, a)))
 //    funCG(List(a, a, a), true)
 //    add(a, a)
   }
@@ -167,5 +169,4 @@ object ArithGraphInt extends ArithGraph {
   }
   
 }
-
 

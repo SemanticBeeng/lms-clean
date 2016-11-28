@@ -1,10 +1,15 @@
-package scala.lms
+/*package scala.lms
 package compgraph
 
-trait BooleanNodes extends Nodes {
+trait BoolGraphs {
+  self: SimpleGraph=>
 
+  type Data
+  type Input = List[Data]
+  type Output = Data
+  
   def and(a:Data, b:Data): Data
-  def or(a:Data, b:Data): Data  
+  def or(a:Data, b:Data): Data
 
   case object AndNode extends Node {
     val inputSize = 2
@@ -19,3 +24,4 @@ trait BooleanNodes extends Nodes {
   }
   
 }
+ */
