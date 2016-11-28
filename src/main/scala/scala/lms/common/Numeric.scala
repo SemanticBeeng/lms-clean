@@ -1,14 +1,16 @@
 package scala.lms
 package common
 
-trait Num[A] extends Ord[A] {
+trait AddTimeAble[A] {
+  self: A =>
+  def *(y: A): A
+  def +(y: A): A
+
+}
+trait Num[A] extends Ord[A] with AddTimeAble[A] {
   self: A =>
 
-  type B <: BooleanOps[B]
-
-  def +(y: A): A
   def -(y: A): A
-  def *(y: A): A
   def /(y: A): A
   def %(y: A): A
 }

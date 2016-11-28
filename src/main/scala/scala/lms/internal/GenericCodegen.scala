@@ -73,9 +73,10 @@ trait GenericCodegen extends BlockTraversal {
         //RUBFIX
         val container = ms.take(ms.indexOf("[")+1) 
         val inners = targs.map(tp => remap(tp)).mkString(", ")
+        /*
         if (container.contains("$Exp["))
           inners
-        else
+        else*/
           container + inners + "]"
       }
       else 

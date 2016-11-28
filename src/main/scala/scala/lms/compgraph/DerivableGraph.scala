@@ -10,7 +10,7 @@ trait DerivableGraphs extends Graphs {
   def zero: Data
   def one: Data
 
-  type Data <: Num[Data]
+  type Data <: AddTimeAble[Data]
 
   type Derivatives = List[Data]
   type N = DerivableNode

@@ -3,20 +3,22 @@ package common
 
 import scala.lms.internal.{GenericNestedCodegen, GenericFatCodegen, GenerationFailedException}
 
+trait ListOps[T] {
+  type I <: Ints#Int
+  def length: I
+  def apply(x: I): T
+}
+
 trait Lists extends Base {
   this: Ints with Units =>
 
   type List[T] <: ListOps[T]
 
-  def NewList[T:Rep](x: Int): List[T]
+  def NewList[T:Rep](x: T*): List[T]
 
   implicit def listRep[T:Rep]: Rep[List[T]] 
   implicit def listLift[T:Rep]: Lift[scala.List[T], List[T]]  
 
-  trait ListOps[T] {
-    def length: Int
-    def apply(x: Int): T
-  }
 
 }
 
@@ -25,13 +27,14 @@ trait Lists extends Base {
 trait ListsExp extends BaseExp with Lists {
   this: IntsExp with UnitsExp =>
 
-  type C[T] = Exp[T]
+  type C[T] = T
 
-  case class ListLength[T](e1: Exp[scala.List[T]]) extends Def[scala.Int]
-  case class ListNew[T](e1: Exp[scala.Int]) extends Def[scala.List[T]]
-  case class ListApply[T](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]) extends Def[T]
+  case class ListLength[T](e1: Exp[scala.List[C[T]]]) extends Def[scala.Int]
+    case class ListNew[T](e: Exp[T]*) extends Def[scala.List[T]]
+    case class ListApply[T](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]) extends Def[T]
 
   case class List[T:Rep](bleh: Exp[scala.List[Any]]) extends ListOps[T] with Expressable[scala.List[Any]] {
+    type I = Int
     val tp = rep[T]
     type U = tp.Internal
     val e:Exp[scala.List[C[U]]] = bleh.asInstanceOf[Exp[scala.List[C[U]]]]
@@ -61,19 +64,17 @@ trait ListsExp extends BaseExp with Lists {
     val repT = rep[T]
     def lift(l: scala.List[T]) = {
       implicit val m = repT.m
-      val r:scala.List[C[repT.Internal]] = l.map(x => repT.to(x))
-      val r2 = list[T](unit(r))
-      println(r2.e)      
-      r2
+      val r:List[T] = NewList[T](l:_*)
+      r
     }
   }
 
   def list[T:Rep](x: Exp[scala.List[Any]]) = List[T](x)
 
-  def NewList[T:Rep](x: Int) = {
+  def NewList[T:Rep](x: T*) = {
     val tp = rep[T]
     implicit val tpm = tp.m
-    list[T](ListNew[tp.Internal](x.e))
+    list[T](ListNew[tp.Internal](x.map(tp.to(_)):_*))
   }
 
   def list_apply[T:Manifest](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]): Exp[T]
@@ -142,6 +143,7 @@ trait ScalaGenLists extends BaseGenLists with ScalaGenNested {
     case ListToArray(l) => emitValDef(sym, src"$l.toArray")
     case ListToSeq(l) => emitValDef(sym, src"$l.toSeq")
      */
+    case ListNew(xs@_*) => emitValDef(sym, src"List(${(xs map {quote}).mkString(",")})")    
     case ListApply(l, e2) => emitValDef(sym, src"$l($e2)")    
     case _ => super.emitNode(sym, rhs) 
   }

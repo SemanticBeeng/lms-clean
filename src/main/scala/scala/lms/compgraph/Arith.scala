@@ -5,6 +5,7 @@ import common._
 
 trait ArithGraphs extends DerivableGraphs {
 
+  type Data <: Num[Data]
 
   trait ArithNode extends DerivableNode
 
@@ -134,38 +135,17 @@ trait ArithGraphExp extends ArithGraph with Base {
 //Not using staging
 object ArithGraphInt extends ArithGraph {
 
+  import Numeric._
   type Data = IntNum
 
   val zero = IntNum(0)
   val one = IntNum(1)
 
-  case class BooleanO(x: Boolean) extends BooleanOps[BooleanO] {
-    type A = BooleanO
-    def &&(y: => A): A = BooleanO(x && y.x)
-    def ||(y: => A): A = BooleanO(x || y.x)
-    def unary_! : A = BooleanO(!x)
-  }
-
-  case class IntNum(x: Int) extends Num[IntNum] {
-    type A = IntNum
-    override type B = BooleanO
-    def +(y: A): A = IntNum(x + y.x)
-    def -(y: A): A = IntNum(x - y.x)
-    def *(y: A): A = IntNum(x * y.x)
-    def /(y: A): A = IntNum(x / y.x)
-    def %(y: A): A = IntNum(x % y.x)
-    def ===(y: A): B = BooleanO(x == y.x)
-    def >(y: A): B = BooleanO(x > y.x)
-    def <(y: A): B = BooleanO(x < y.x)
-    def min(y: A): A = IntNum(x.min(y.x))
-    def max(y: A): A = IntNum(x.max(y.x))    
-  }
-
   def app(b: Int) = {
     val a = IntNum(b)
     //simple(List(a, b))
     funCG(List(a, a, a), true)
-//    add(a, a)
+    //    add(a, a)
   }
   
 }
