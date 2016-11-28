@@ -16,14 +16,10 @@ trait Base {
   trait Lift[A,B] {
     def lift(x:A):B
   }
-
-  trait LiftF[A[_],B[_]] {
-    def liftF[T:Rep](x:A[T]):B[T]
-  }
   
   implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def lift(x:T) = x }
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.lift(x)
-  implicit def liftF[T[V],U[V],V:Rep](x:T[V])(implicit e: LiftF[T,U]): U[V] = e.liftF(x)  
+
 
   trait Rep[T] {
     type Internal
@@ -32,12 +28,6 @@ trait Base {
     def m: Manifest[Internal]
   }
 
-
-
-/*  case class Rewrite[T:Rep](a:T, b:T)
-
-  def lower[A:Rep,B:Rep,C:Rep](f: (A,B) => Rewrite[C]): Unit
- */
 }
 
 trait BaseExp extends Base with Expressions with Blocks with Transforming {
@@ -58,26 +48,14 @@ trait BaseExp extends Base with Expressions with Blocks with Transforming {
   }
 
 
-/*
-  def repF[T: Rep] = {
-    val repT = rep[T]
-    type I = repT.Internal
-    def rep[A[_]:Manifest, B[repT.T] <: Expressable[A[repT.T]]]()
-    rep
-  }
- */
-  //  def repF[T, A[rep.T]:Manifest, B[rep.T] <: Expressable[A[rep.T]]](f: Exp[A[rep.T]] => B[T])(implicit rep: Rep[T]) = ()/*new Rep,] extends Rep[B[T]] with Lift[A[T],B[T]]{
-  /*
-    implicit val tp = rep[T]
+  def repF[T, A[_], B[T] <: Expressable[A[Any]]](tp: Rep[T])(f: Exp[A[Any]] => B[T], man:Manifest[A[tp.Internal]]) = new Rep[B[T]]{
     private implicit val tpm = tp.m    
     type Internal = A[tp.Internal]
-    def from(x:Exp[Internal]) = f(x)
-    def to(x:B[T]) = x.e
-    def lift(x:A[T]):B[T] = from(unit(x))
-    def m = manifest[A[T]]
-  }*/
-  
-  
+    def from(x:Exp[Internal]) = f(x.asInstanceOf[Exp[A[Any]]])
+    def to(x:B[T]) = x.e.asInstanceOf[Exp[Internal]]
+    def m = man
+  }
+      
 
 }
 

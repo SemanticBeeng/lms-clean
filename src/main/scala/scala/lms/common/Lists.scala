@@ -11,8 +11,9 @@ trait Lists extends Base {
 
   def NewList[T:Rep](x: T*): List[T]
 
-  implicit def listRep[T:Rep]: Rep[List[T]] 
-  implicit def listLift[T:Rep]: Lift[scala.List[T], List[T]]  
+  implicit def listRep[T:Rep]: Rep[List[T]]
+  implicit def listLift[U, T](implicit tp: Rep[T], lift: Lift[U, T]) : Lift[scala.List[U], List[T]]
+  implicit def listLiftIdent[T](implicit tp: Rep[T]) : Lift[scala.List[T], List[T]]   
 
   trait ListOps[T] {
     def length: Int
@@ -41,29 +42,20 @@ trait ListsExp extends BaseExp with Lists {
     def apply(x: Int) = tp.from(list_apply(e, x.e))
   }
 
-/*  private def listRepF[T: Rep] = {
-    repF[T, scala.List, List](list)
-  }
-  def listLift[T:Rep] = listRepF[T]
- */
 
-  implicit def listRep[T](implicit tp: Rep[T]) = new Rep[List[T]] {
-    type Internal = scala.List[tp.Internal]
+  implicit def listRep[T](implicit tp: Rep[T]) = {
     implicit val tpm = tp.m
-    def from(e:Exp[Internal]) = list(e.asInstanceOf[Exp[scala.List[Any]]]);
-    def to(x:List[T]) = {
-      x.e.asInstanceOf[Exp[Internal]]
-    }
-    def m = manifest[Internal]
-    override def toString = "List["+rep[T]+"]"
+    repF[T, scala.List, List](tp)(list(_), manifest[scala.List[tp.Internal]])
   }
 
-  def listLift[T:Rep] = new Lift[scala.List[T], List[T]] {
-    def lift(l: scala.List[T]) = {
-      NewList[T](l:_*)
-    }
+
+  def listLift[U,T](implicit tp: Rep[T], liftInner: Lift[U,T]) = new Lift[scala.List[U], List[T]] {
+    def lift(l: scala.List[U]) = NewList[T](l.map(x => liftInner.lift(x)):_*)
   }
 
+  def listLiftIdent[T](implicit tp: Rep[T]) = listLift(tp, identLift)
+  
+  
   def list[T:Rep](x: Exp[scala.List[Any]]) = List[T](x)
 
   def NewList[T:Rep](x: T*) = {

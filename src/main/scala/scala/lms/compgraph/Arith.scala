@@ -120,9 +120,9 @@ trait ArithGraphExp extends ArithGraph with Base {
   lazy val zero: Int = 0
   lazy val one: Int = 1
 
-  def app(a: Data) = {
+  def app(a: Data): List[Data] = {
     //simple(List(a, b))
-    lift(funCG.backpropagate(List(a, a, a))).apply(one)
+    funCG.backpropagate(List(a, a, a))
 //    funCG(List(a, a, a), true)
 //    add(a, a)
   }
