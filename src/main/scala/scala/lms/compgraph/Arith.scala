@@ -122,7 +122,7 @@ trait ArithGraphExp extends ArithGraph with Base {
 
   def app(a: Data) = {
     //simple(List(a, b))
-    lift(funCG.backpropagate(List(a, a, a)))
+    lift(funCG.backpropagate(List(a, a, a))).apply(one)
 //    funCG(List(a, a, a), true)
 //    add(a, a)
   }
