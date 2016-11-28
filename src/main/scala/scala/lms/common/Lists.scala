@@ -14,9 +14,8 @@ trait Lists extends Base {
   implicit def listLift[T:Rep]: Lift[scala.List[T], List[T]]  
 
   trait ListOps[T] {
-    type U    
     def length: Int
-    def apply(x: Int):U
+    def apply(x: Int): T
   }
 
 }
@@ -26,18 +25,19 @@ trait Lists extends Base {
 trait ListsExp extends BaseExp with Lists {
   this: IntsExp with UnitsExp =>
 
+  type C[T] = Exp[T]
 
   case class ListLength[T](e1: Exp[scala.List[T]]) extends Def[scala.Int]
   case class ListNew[T](e1: Exp[scala.Int]) extends Def[scala.List[T]]
-  case class ListApply[T](e1: Exp[scala.List[Exp[T]]], e2: Exp[scala.Int]) extends Def[T]
+  case class ListApply[T](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]) extends Def[T]
 
   case class List[T:Rep](bleh: Exp[scala.List[Any]]) extends ListOps[T] with Expressable[scala.List[Any]] {
     val tp = rep[T]
-    type U = Exp[tp.Internal]
-    val e:Exp[scala.List[Exp[tp.Internal]]] = bleh.asInstanceOf[Exp[scala.List[Exp[tp.Internal]]]]
+    type U = tp.Internal
+    val e:Exp[scala.List[C[U]]] = bleh.asInstanceOf[Exp[scala.List[C[U]]]]
     implicit val mf = tp.m
     def length = int(list_length(e))
-    def apply(x: Int) = list_apply(e, x.e)
+    def apply(x: Int) = tp.from(list_apply(e, x.e))
   }
 
 /*  private def listRepF[T: Rep] = {
@@ -61,7 +61,7 @@ trait ListsExp extends BaseExp with Lists {
     val repT = rep[T]
     def lift(l: scala.List[T]) = {
       implicit val m = repT.m
-      val r:scala.List[Exp[repT.Internal]] = l.map(x => repT.to(x) )
+      val r:scala.List[C[repT.Internal]] = l.map(x => repT.to(x))
       val r2 = list[T](unit(r))
       println(r2.e)      
       r2
@@ -76,7 +76,7 @@ trait ListsExp extends BaseExp with Lists {
     list[T](ListNew[tp.Internal](x.e))
   }
 
-  def list_apply[T:Manifest](e1: Exp[scala.List[Exp[T]]], e2: Exp[scala.Int]): Exp[T]
+  def list_apply[T:Manifest](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]): Exp[T]
   def list_length[T](e1: Exp[scala.List[T]]): Exp[scala.Int]
   
 }
@@ -84,7 +84,7 @@ trait ListsExp extends BaseExp with Lists {
 trait ListsImpl extends ListsExp  {
   this: IntsExp with UnitsExp =>
 
-  def list_apply[T:Manifest](e1: Exp[scala.List[Exp[T]]], e2: Exp[scala.Int]) = toAtom(ListApply[T](e1, e2))
+  def list_apply[T:Manifest](e1: Exp[scala.List[C[T]]], e2: Exp[scala.Int]) = toAtom(ListApply[T](e1, e2))
   def list_length[T](e1: Exp[scala.List[T]]) = ListLength(e1)    
 
 }
@@ -103,6 +103,7 @@ trait BaseGenLists extends GenericNestedCodegen {
 }
 
 trait ScalaGenLists extends BaseGenLists with ScalaGenNested {
+  val IR: RichExp
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
@@ -141,6 +142,7 @@ trait ScalaGenLists extends BaseGenLists with ScalaGenNested {
     case ListToArray(l) => emitValDef(sym, src"$l.toArray")
     case ListToSeq(l) => emitValDef(sym, src"$l.toSeq")
      */
+    case ListApply(l, e2) => emitValDef(sym, src"$l($e2)")    
     case _ => super.emitNode(sym, rhs) 
   }
 }
