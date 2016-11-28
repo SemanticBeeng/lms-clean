@@ -33,13 +33,13 @@ trait ListsExp extends BaseExp with Lists {
   case class ListNew[T](e: Exp[T]*) extends Def[scala.List[T]]
   case class ListApply[T](e1: Exp[scala.List[T]], e2: Exp[scala.Int]) extends Def[T]
 
-  case class List[T:Rep](bleh: Exp[scala.List[Any]]) extends ListOps[T] with Expressable[scala.List[Any]] {
+  case class List[T:Rep](e: Exp[scala.List[Any]]) extends ListOps[T] with Expressable[scala.List[Any]] {
     val tp = rep[T]
     type U = tp.Internal
-    val e:Exp[scala.List[U]] = bleh.asInstanceOf[Exp[scala.List[U]]]
+    val typedE:Exp[scala.List[U]] = e.asInstanceOf[Exp[scala.List[U]]]
     implicit val mf = tp.m
     def length = int(list_length(e))
-    def apply(x: Int) = tp.from(list_apply(e, x.e))
+    def apply(x: Int) = tp.from(list_apply(typedE, x.e))
   }
 
 
@@ -61,7 +61,8 @@ trait ListsExp extends BaseExp with Lists {
   def NewList[T:Rep](x: T*) = {
     val tp = rep[T]
     implicit val tpm = tp.m
-    list[T](ListNew[tp.Internal](x.map(tp.to(_)):_*))
+    val l: Exp[scala.List[tp.Internal]] = ListNew[tp.Internal](x.map(tp.to(_)):_*)
+    list[T](l.asInstanceOf[Exp[scala.List[Any]]])
   }
 
   def list_apply[T:Manifest](e1: Exp[scala.List[T]], e2: Exp[scala.Int]): Exp[T]
