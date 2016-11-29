@@ -7,7 +7,7 @@ import internal._
 import java.io.{File, PrintWriter}
 import compgraph._
 
-trait Prog extends Rich with ArithGraphExp {
+trait Prog extends Rich with MatrixGraph {
 
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
@@ -30,7 +30,7 @@ trait Prog extends Rich with ArithGraphExp {
 }
 
 
-object Main extends App with ArithGraphExp with RichOptImpl with Compile with Prog{
+object Main extends App with RichOptImpl with Compile with Prog{
 
 
   val exec = scala.List(

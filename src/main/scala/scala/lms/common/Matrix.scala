@@ -1,101 +1,218 @@
-/*package scala.lms
+package scala.lms
 package common
 
-trait MatrixOps[N] extends AddTimeAble[N]{
-  self: N => 
-  type I <: IntOps[I]
+import scala.lms.internal.{GenericNestedCodegen, GenericFatCodegen, GenerationFailedException}
 
-  def height: I
-  def width: I  
-  def *(y:N): N
-  def +(y:N): N
-  def -(y:N): N  
-  def vstack(y:N): N
-  def hstack(y:N): N     
-}
 
 trait Matrixs extends Base {
-
   this: Ints with Units =>
 
-  type Matrix[T] <: MatrixOps[Matrix[T]] { type I = T }
 
-  def NewMatrix[T:Rep:Num](h: Int, w: Int): Matrix[T]
-  def NewMatrixOnes[T:Rep:Num](h: Int, w: Int): Matrix[T]  
+  type Matrix[T <: Num[T]] <: MatrixOps[T]
 
-  type ScalaMatrix[T] = IndexedSeq[IndexedSeq[T]]
-  implicit def matrixRep[T:Rep]: Rep[Matrix[T]] 
-  implicit def matrixLift[T:Rep]: Lift[ScalaMatrix[T], Matrix[T]]  
+  def NewMatrix[T <:Num[T]](ts: T*)(implicit rep: Rep[T]): Matrix[T]  
+  def NewMatrixZeros[T <:Num[T]](hw: (Int, Int))(implicit rep: Rep[T]): Matrix[T]
+  def NewMatrixOnes[T <: Num[T]](hw: (Int, Int))(implicit rep: Rep[T]): Matrix[T]  
+
+  type ScalaMatrix[T] = IndexedSeq[T]
+  
+
+  implicit def matrixRep[T <: Num[T]](implicit rep: Rep[T]): Rep[Matrix[T]]
+  implicit def matrixLift[U, T <: Num[T]](implicit tp: Rep[T], lift: Lift[U, T]) : Lift[ScalaMatrix[U], Matrix[T]]
+  implicit def matrixLiftIdent[T <: Num[T]](implicit tp: Rep[T]) : Lift[ScalaMatrix[T], Matrix[T]]   
+
+  trait MatrixOps[T <: Num[T]] extends AddTimeAble[Matrix[T]]{
+    self: Matrix[T] =>    
+
+    def apply(x:Int): T
+    def height: Int
+    def width: Int
+    def *(y:Matrix[T]): Matrix[T]
+    def +(y:Matrix[T]): Matrix[T]
+    def -(y:Matrix[T]): Matrix[T]
+    def vstack(y:Matrix[T]): Matrix[T]
+    def hstack(y:Matrix[T]): Matrix[T]
+    def length: Int
+  }
+
+
 
 
 }
+
 
 
 trait MatrixsExp extends BaseExp with Matrixs {
   this: IntsExp with UnitsExp =>
 
-  type C[T] = Exp[T]
 
-  case class MatrixHeight[T](e1: Exp[ScalaMatrix[C[T]]]) extends Def[scala.Int]
-  case class MatrixWidth[T](e1: Exp[ScalaMatrix[C[T]]]) extends Def[scala.Int]    
-  case class MatrixNew[T](h: Exp[scala.Int], w: Exp[scala.Int]) extends Def[ScalaMatrix[T]]
+  case class MatrixHeight[T](e1: Exp[ScalaMatrix[T]]) extends Def[scala.Int]
+  case class MatrixWidth[T](e1: Exp[ScalaMatrix[T]]) extends Def[scala.Int]
+  case class MatrixLength[T](e1: Exp[ScalaMatrix[T]]) extends Def[scala.Int]      
+  case class MatrixNewZeros[T](h: Exp[scala.Int], w: Exp[scala.Int]) extends Def[ScalaMatrix[T]]
   case class MatrixNewOnes[T](h: Exp[scala.Int], w: Exp[scala.Int]) extends Def[ScalaMatrix[T]]
-  case class MatrixTime[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[ScalaMatrix[C[T]]]) extends Def[T]
-  case class MatrixAdd[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[ScalaMatrix[C[T]]]) extends Def[T]
-  case class MatrixMinus[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[ScalaMatrix[C[T]]]) extends Def[T]  
-  case class MatrixHStack[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[ScalaMatrix[C[T]]]) extends Def[T]
-  case class MatrixVStack[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[ScalaMatrix[C[T]]]) extends Def[T]
-  case class MatrixApply[T](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[scala.Int]) extends Def[T]
+  case class MatrixNew[T](e: Exp[T]*) extends Def[ScalaMatrix[T]]  
+  case class MatrixTimes[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
+  case class MatrixAdd[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
+  case class MatrixMinus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
+  case class MatrixHStack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
+  case class MatrixVStack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
+  case class MatrixApply[T](e1: Exp[ScalaMatrix[T]], e2: Exp[scala.Int]) extends Def[T]
 
-  case class Matrix[T:Rep](bleh: Exp[ScalaMatrix[Any]]) extends MatrixOps[T] with Expressable[ScalaMatrix[Any]] {
-    type I = Int
-    val tp = rep[T]
-    type U = tp.Internal
-    val e:Exp[ScalaMatrix[C[U]]] = bleh.asInstanceOf[Exp[ScalaMatrix[C[U]]]]
+  case class Matrix[T <: Num[T]](e: Exp[ScalaMatrix[Any]])(implicit repT: Rep[T]) extends MatrixOps[T] with Expressable[ScalaMatrix[Any]] {
+
+    val tp = repT
     implicit val mf = tp.m
+
+    type U = tp.Internal
+    val typedE:Exp[ScalaMatrix[U]] = e.asInstanceOf[Exp[ScalaMatrix[U]]]
+
+    def conv(x:Exp[Any]) = x.asInstanceOf[Exp[ScalaMatrix[U]]]
     def length = int(matrix_length(e))
-    def apply(x: Int) = tp.from(matrix_apply(e, x.e))
+    def width = int(matrix_width(e))
+    def height = int(matrix_height(e))        
+    def apply(x: Int): T = tp.from(matrix_apply(typedE, x.e))
+    def +(x: Matrix[T]) = matrix[T](matrix_plus[U](typedE, conv(x.typedE)))
+    def *(x: Matrix[T]) = matrix[T](matrix_times[U](typedE, conv(x.typedE)))
+    def -(x: Matrix[T]) = matrix[T](matrix_minus[U](typedE, conv(x.typedE)))
+    def hstack(x: Matrix[T]) = matrix[T](matrix_hstack[U](typedE, conv(x.typedE)))
+    def vstack(x: Matrix[T]) = matrix[T](matrix_vstack[U](typedE, conv(x.typedE)))
+
   }
 
 
-  implicit def matrixRep[T](implicit tp: Rep[T]) = new Rep[Matrix[T]] {
+  implicit def matrixRep[T <: Num[T]](implicit tp: Rep[T]) = new Rep[Matrix[T]]{
+    private implicit val tpm = tp.m    
     type Internal = ScalaMatrix[tp.Internal]
-    implicit val tpm = tp.m
-    def from(e:Exp[Internal]) = matrix(e.asInstanceOf[Exp[ScalaMatrix[Any]]]);
-    def to(x:Matrix[T]) = {
-      x.e.asInstanceOf[Exp[Internal]]
-    }
+    def from(x:Exp[Internal]) = matrix(x.asInstanceOf[Exp[ScalaMatrix[Any]]])
+    def to(x:Matrix[T]) = x.e.asInstanceOf[Exp[Internal]]
     def m = manifest[Internal]
-    override def toString = "Matrix["+rep[T]+"]"
   }
 
-  def matrixLift[T:Rep] = new Lift[ScalaMatrix[T], Matrix[T]] {
-    val repT = rep[T]
-    def lift(l: ScalaMatrix[T]) = {
-      implicit val m = repT.m
-      val r:ScalaMatrix[C[repT.Internal]] = l.map(x => repT.to(x))
-      val r2 = matrix[T](unit(r))
-      println(r2.e)      
-      r2
-    }
+
+  def matrixLift[U,T <: Num[T]](implicit tp: Rep[T], liftInner: Lift[U,T]) = new Lift[ScalaMatrix[U], Matrix[T]] {
+    def lift(l: ScalaMatrix[U]) = NewMatrix[T](l.map(x => liftInner.lift(x)):_*)
   }
 
-  def matrix[T:Rep](x: Exp[ScalaMatrix[Any]]) = Matrix[T](x)
+  def matrixLiftIdent[T <: Num[T]](implicit tp: Rep[T]) = matrixLift(tp, identLift)
+  
+  
+  def matrix[T <: Num[T]](x: Exp[ScalaMatrix[Any]])(implicit tp: Rep[T]) = {
+    val r = Matrix[T](x)
+    println(x + "    " + r.e.tp + "....")
+    r
+  }
 
-  def NewMatrix[T:Rep](w: Int, h: Int) = {
-    val tp = rep[T]
+  def NewMatrix[T <: Num[T]](x: T*)(implicit tp: Rep[T]) = {
     implicit val tpm = tp.m
-    matrix[T](MatrixNew[tp.Internal](w.e, h.e))
-  }
-
-  def NewMatrixOnes[T:Rep](w: Int, h: Int) = {
-    val tp = rep[T]
-    implicit val tpm = tp.m
-    matrix[T](MatrixNewOnes[tp.Internal](w.e, h.e))
+    val l: Exp[ScalaMatrix[tp.Internal]] = MatrixNew[tp.Internal](x.map(tp.to(_)):_*)
+    matrix[T](l.asInstanceOf[Exp[ScalaMatrix[Any]]])
   }
   
-  def matrix_apply[T:Manifest](e1: Exp[ScalaMatrix[C[T]]], e2: Exp[scala.Int]): Exp[T]
-  def matrix_length[T](e1: Exp[ScalaMatrix[C[T]]]): Exp[scala.Int]
-  
+  def NewMatrixZeros[T <: Num[T]](hw: (Int, Int))(implicit tp: Rep[T]) = {
+    val (h, w) = hw    
+    implicit val tpm = tp.m
+    val l: Exp[ScalaMatrix[tp.Internal]] = MatrixNewZeros[tp.Internal](w.e, h.e)
+    matrix[T](l.asInstanceOf[Exp[ScalaMatrix[Any]]])
+  }
+
+  def NewMatrixOnes[T <: Num[T]](hw: (Int,Int))(implicit tp: Rep[T]) = {
+    val (h, w) = hw
+    implicit val tpm = tp.m
+    val l: Exp[ScalaMatrix[tp.Internal]] = MatrixNewOnes[tp.Internal](w.e, h.e)
+    matrix[T](l.asInstanceOf[Exp[ScalaMatrix[Any]]])
+  }
+
+
+  def matrix_apply[T:Manifest](e1: Exp[ScalaMatrix[T]], e2: Exp[scala.Int]): Exp[T]
+  def matrix_length[T](e1: Exp[ScalaMatrix[T]]): Exp[scala.Int]
+  def matrix_width[T](e1: Exp[ScalaMatrix[T]]): Exp[scala.Int]
+  def matrix_height[T](e1: Exp[ScalaMatrix[T]]): Exp[scala.Int]    
+  def matrix_plus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]): Exp[ScalaMatrix[T]]
+  def matrix_minus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]): Exp[ScalaMatrix[T]]
+  def matrix_times[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]): Exp[ScalaMatrix[T]]
+  def matrix_hstack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]): Exp[ScalaMatrix[T]]
+  def matrix_vstack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]): Exp[ScalaMatrix[T]]
+ 
+
+
 }
- */
+
+  
+
+trait MatrixsImpl extends MatrixsExp  {
+  this: IntsExp with UnitsExp =>
+
+  def matrix_apply[T:Manifest](e1: Exp[ScalaMatrix[T]], e2: Exp[scala.Int]) = MatrixApply[T](e1, e2)
+  def matrix_length[T](e1: Exp[ScalaMatrix[T]]) = MatrixLength(e1)
+  def matrix_width[T](e1: Exp[ScalaMatrix[T]]) = MatrixWidth(e1)
+  def matrix_height[T](e1: Exp[ScalaMatrix[T]]) = MatrixHeight(e1)    
+  def matrix_plus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]) = MatrixAdd[T](e1, e2)
+  def matrix_minus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]) = MatrixMinus[T](e1, e2)
+  def matrix_times[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]) = MatrixTimes[T](e1, e2)
+  def matrix_hstack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]) = MatrixHStack[T](e1, e2)
+  def matrix_vstack[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]])(implicit m: Manifest[ScalaMatrix[T]]) = MatrixVStack[T](e1, e2)        
+
+
+}
+
+
+trait MatrixsOptImpl extends MatrixsImpl with EffectExp{
+  this: IntsExp with UnitsExp =>
+
+
+}
+
+
+trait BaseGenMatrixs extends GenericNestedCodegen {
+  import IR._
+
+}
+
+trait ScalaGenMatrixs extends BaseGenMatrixs with ScalaGenNested {
+  val IR: RichExp
+  import IR._
+
+  override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
+    /*
+    case MatrixNew(xs) => emitValDef(sym, src"Matrix(${(xs map {quote}).mkString(",")})")
+
+    case MatrixConcat(xs,ys) => emitValDef(sym, src"$xs ::: $ys")
+    case MatrixCons(x, xs) => emitValDef(sym, src"$x :: $xs")
+    case MatrixHead(xs) => emitValDef(sym, src"$xs.head")
+    case MatrixTail(xs) => emitValDef(sym, src"$xs.tail")
+    case MatrixIsEmpty(xs) => emitValDef(sym, src"$xs.isEmpty")
+    case MatrixFromSeq(xs) => emitValDef(sym, src"Matrix($xs: _*)")
+    case MatrixMkString(xs) => emitValDef(sym, src"$xs.mkString")
+    case MatrixMkString2(xs,s) => emitValDef(sym, src"$xs.mkString($s)")
+    case MatrixMap(l,x,blk) => 
+      gen"""val $sym = $l.map { $x => 
+           |${nestedBlock(blk)}
+           |$blk
+           |}"""
+    case MatrixFlatMap(l, x, b) =>
+      gen"""val $sym = $l.flatMap { $x => 
+           |${nestedBlock(b)}
+           |$b
+           |}"""
+    case MatrixFilter(l, x, b) =>
+      gen"""val $sym = $l.filter { $x => 
+           |${nestedBlock(b)}
+           |$b
+           |}"""
+    case MatrixSortBy(l,x,blk) =>
+      gen"""val $sym = $l.sortBy { $x => 
+           |${nestedBlock(blk)}
+           |$blk
+           |}"""
+    case MatrixPrepend(l,e) => emitValDef(sym, src"$e :: $l")    
+    case MatrixToArray(l) => emitValDef(sym, src"$l.toArray")
+    case MatrixToSeq(l) => emitValDef(sym, src"$l.toSeq")
+     */
+    case MatrixTimes(m1, m2) => emitValDef(sym, src"$m1.zip($m2).map(x => (x._1 * x._2))")          
+    case MatrixAdd(m1, m2) => emitValDef(sym, src"$m1.zip($m2).map(x => (x._1 + x._2))")      
+    case MatrixNew(xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")})")    
+    case MatrixApply(l, e2) => emitValDef(sym, src"$l($e2)")    
+    case _ => super.emitNode(sym, rhs) 
+  }
+}

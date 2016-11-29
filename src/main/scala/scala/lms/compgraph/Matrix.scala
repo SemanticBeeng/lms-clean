@@ -1,22 +1,40 @@
-/*package scala.lms
+package scala.lms
 package compgraph
 
 import common._
 
-trait MatrixGraphs extends DerivableGraphs {
 
+trait MatrixGraphs extends Graphs {
+  self: Rich =>
 
-  type Data <: MatrixOps[Data]
+  type NumM <: Num[NumM]
+  type Data = Matrix[NumM]
+  type Size = (scala.Int, scala.Int)
+  type N = MatrixNode
+  type G = MatrixGraph
+  
 
-  trait MatrixNode extends DerivableNode
+  def inputMatrixSize: IndexedSeq[Size]
+
+  trait MatrixNode extends Node {
+
+    def size(linput: scala.List[Size]): Option[Size]
+
+  }
 
   case object AddNode extends MatrixNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) + input(1)
 
-    def d(input: Input) =
-      List(one, one)    
+    def size(input: scala.List[Size]) = {
+      val (a, b) = input(0)
+      val (c, d) = input(1)      
+      if (a.equals(c) && b.equals(d))
+        Some((a,b))
+      else
+        None
+      }
   }
 
   case object MinusNode extends MatrixNode {
@@ -24,9 +42,14 @@ trait MatrixGraphs extends DerivableGraphs {
     def op(input: Input) =
       input(0) - input(1)
 
-    def d(input: Input) =
-      List(one, zero-one)
-    
+    def size(input: scala.List[Size]) = {
+      val (a, b) = input(0)
+      val (c, d) = input(1)
+      if (a.equals(c) && b.equals(d))
+        Some((a,b))
+      else
+        None
+      }        
   }
 
 
@@ -35,78 +58,106 @@ trait MatrixGraphs extends DerivableGraphs {
     def op(input: Input) =
       input(0) * input(1)
 
-    def d(input: Input) = {
-      List(input(1), input(0))
-    }
+    def size(input: scala.List[Size]) = {
+      val (a, b) = input(0)
+      val (c, d) = input(1)      
+      if (b.equals(c))
+        Some((a,d))
+      else
+        None
+      }
   }
 
-
-  case class ConstantNode(c: Data) extends MatrixNode {
+  case class ConstantNode(c: Data, val h: scala.Int, val w: scala.Int) extends MatrixNode {
     val inputSize = 0
     def op(input: Input) =
       c
 
-    def d(input: Input) =
-      List()
+    def size(input: scala.List[Size]) = Some((h, w))
+  }
 
+  trait OutputNode extends MatrixNode with super.OutputNode{
+    def size(input: scala.List[Size]) = Some(input(0))
+  }
 
+  def OutputNode():N = new OutputNode {}
+
+  trait InputNode extends MatrixNode with super.InputNode
+
+  private var iN = -1
+  def InputNode():N = {
+    iN += 1
+    new InputNode {
+      var index = iN
+      def size(input: scala.List[Size]) = Some(inputMatrixSize(index))
     }
+  }
   
+
+  trait MatrixGraph extends Graph {
+
+    def checkDim() {
+      var dim: Map[String, Size] =
+        (1 to inputSize)
+          .map("IN"+_)
+          .map(x => (x, nodes(x)._1.size(scala.List()).get))
+          .toMap
+      def rec(str:String):Size = {
+        if (dim.contains(str)) {
+          dim(str)
+        } else {
+          val (n, i) = nodes(str)
+          val sizeInput = i.map(rec).toList
+          val r = n.size(sizeInput).getOrElse(
+            throw new Exception("Size doesn't check at node: " +n + " with inputs: " + sizeInput)
+          )
+          dim += ((str, r))
+          r
+        }
+      }
+    }
+    //checkDim at creation
+    checkDim()
+
+  }
+
+  def Graph(m: Map[String, R], iS: scala.Int) = new MatrixGraph {
+    def nodes = m
+    def inputSize = iS 
+  }
+  
+
 }
 
 
 trait MatrixGraph extends MatrixGraphs  {
+  self: Rich =>
 
+  type NumM = Int
+
+  val inputMatrixSize = IndexedSeq((1,4), (1,4), (1,5))
   def simpleCG = {
-    val l = List(GraphNode("ADD", AddNode, List("IN1", "IN2")))
+    val l = scala.List(GraphNode("ADD", AddNode, scala.List("IN1", "IN2")))
     newGraph(l, 2, "ADD")
   }
 
   def funCG = {
-    val l = List(
-      GraphNode("ADD", AddNode, List("IN1", "IN2")),
-      GraphNode("ADD2", TimeNode, List("ADD", "ADD")),
-      GraphNode("ADD3", AddNode, List("ADD2", "IN3"))              
+    val l = scala.List(
+      GraphNode("ADD", AddNode, scala.List("IN1", "IN2")),
+      GraphNode("ADD2", TimeNode, scala.List("ADD", "ADD")),
+      GraphNode("ADD3", AddNode, scala.List("ADD2", "IN3"))              
     )
     newGraph(l, 3, "ADD3")
   }
   
-  
 
-}
-
-
-trait MatrixGraphExp extends MatrixGraph with Base {
-  self: Rich with Matrixs =>
-
-  type Data = Matrix[Int]
-
-  lazy val zero: Int = 0
-  lazy val one: Int = 1
-
-  def app(a: Data) = {
-    //simple(List(a, b))
-//    lift(funCG.backpropagate(List(a, a, a)))
-//    funCG(List(a, a, a), true)
-//    add(a, a)
+  def app(b: Int): Matrix[Int] = {
+    val a:Matrix[NumM] = IndexedSeq(b)
+    //simple(scala.List(a, b))
+    funCG(scala.List(a, a, a), false)
+    //    add(a, a)
   }
   
-  
-}
-
-
-
-//Not using staging
-object MatrixGraphInt extends MatrixGraph with Matrixs with RichOptImpl {
-
-  import Numeric._
-
-  type Data = Matrix[IntNum]
-
-  val zero = IntNum(0)
-  val one = IntNum(1)
-
 
 }
 
- */

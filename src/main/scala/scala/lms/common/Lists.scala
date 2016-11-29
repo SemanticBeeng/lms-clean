@@ -35,9 +35,11 @@ trait ListsExp extends BaseExp with Lists {
 
   case class List[T:Rep](e: Exp[scala.List[Any]]) extends ListOps[T] with Expressable[scala.List[Any]] {
     val tp = rep[T]
+    implicit val mf = tp.m
+
     type U = tp.Internal
     val typedE:Exp[scala.List[U]] = e.asInstanceOf[Exp[scala.List[U]]]
-    implicit val mf = tp.m
+
     def length = int(list_length(e))
     def apply(x: Int) = tp.from(list_apply(typedE, x.e))
   }
@@ -73,7 +75,7 @@ trait ListsExp extends BaseExp with Lists {
 trait ListsImpl extends ListsExp  {
   this: IntsExp with UnitsExp =>
 
-  def list_apply[T:Manifest](e1: Exp[scala.List[T]], e2: Exp[scala.Int]) = toAtom(ListApply[T](e1, e2))
+  def list_apply[T:Manifest](e1: Exp[scala.List[T]], e2: Exp[scala.Int]) = ListApply[T](e1, e2)
   def list_length[T](e1: Exp[scala.List[T]]) = ListLength(e1)    
 
 }

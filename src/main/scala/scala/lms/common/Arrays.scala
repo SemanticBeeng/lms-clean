@@ -34,12 +34,16 @@ trait ArraysExp extends BaseExp with Arrays {
   case class ArrayApply[T](e1: Exp[scala.Array[T]], e2: Exp[scala.Int]) extends Def[T]
 
   case class Array[T:Rep](e: Exp[scala.Array[Any]]) extends ArrayOps[T] with Expressable[scala.Array[Any]] {
+
     val tp = rep[T]
+    implicit val mf = tp.m
+
     type U = tp.Internal
     val typedE:Exp[scala.Array[U]] = e.asInstanceOf[Exp[scala.Array[U]]]
-    implicit val mf = tp.m
+
     def length = int(array_length(e))
     def apply(x: Int) = tp.from(array_apply(typedE, x.e))
+    
   }
 
 
@@ -74,7 +78,7 @@ trait ArraysExp extends BaseExp with Arrays {
 trait ArraysImpl extends ArraysExp  {
   this: IntsExp with UnitsExp =>
 
-  def array_apply[T:Manifest](e1: Exp[scala.Array[T]], e2: Exp[scala.Int]) = toAtom(ArrayApply[T](e1, e2))
+  def array_apply[T:Manifest](e1: Exp[scala.Array[T]], e2: Exp[scala.Int]) = ArrayApply[T](e1, e2)
   def array_length[T](e1: Exp[scala.Array[T]]) = ArrayLength(e1)    
 
 }

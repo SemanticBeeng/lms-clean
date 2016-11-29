@@ -44,10 +44,7 @@ trait Graphs {
   def OutputNode() :N
   def InputNode(): N
 
-
   case class GraphNode(name: String, n:N, inputs:List[String])
-
-
 
   def newGraph(l: List[GraphNode], inputSize:Int, outInput: String):G = {
     var m: Map[String, R] = Map(("OUT", (OutputNode(), List(outInput))))
@@ -60,6 +57,9 @@ trait Graphs {
 
   trait Graph {
 
+    //check if there is circle in the graph
+    checkCycle()
+
     def inputSize: Int
 
     def nodes: Map[String, R]
@@ -70,6 +70,12 @@ trait Graphs {
 
     def apply(input: List[Data], dbg:Boolean = false) =
       forward(input, dbg)._1
+
+    def checkCycle() = {
+      
+      //TODO implement a cycling check algorithm
+    }
+
 
     def forward(input: List[Data], dbg:Boolean = false) = {
 
@@ -107,7 +113,7 @@ trait Graphs {
 
 
 
-trait GraphImpl extends Graphs{
+trait SimpleGraphs extends Graphs{
 
   type N = Node
   type G = Graph
