@@ -172,9 +172,17 @@ trait ScalaGenMatrixs extends BaseGenMatrixs with ScalaGenNested {
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-    case MatrixAdd(m1, m2) => emitValDef(sym, src"{val l = $m1(0).length; $m1.flatten.zip($m2.flatten).map(x => (x._1+x._2)).sliding(l, l).toIndexedSeq}")
+    case MatrixAdd(m1, m2) => emitValDef(sym, src"{val l = $m1(0).length; $m1.flatten.zip($m2.flatten).map(x => (x._1+x._2)).sliding(l, l).toIndexedSeq}")      
+    case MatrixMinus(m1, m2) => emitValDef(sym, src"{val l = $m1(0).length; $m1.flatten.zip($m2.flatten).map(x => (x._1-x._2)).sliding(l, l).toIndexedSeq}")      
     case MatrixTimes(m1, m2) => emitValDef(sym, src"""{val a = $m1.length; val b = $m1(0).length; val c = $m2.length; val d = $m2(0).length; val ar = Array.fill(a, d)(0); for (i <- (0 until a)) for (j <- (0 until d)) for (k <- (0 until c)) ar(i)(j) += $m1(i)(k)*$m2(k)(j); ar.map(_.toIndexedSeq).toIndexedSeq}""")
-    case MatrixNew(h, w, xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")}).sliding($w, $w).toIndexedSeq")    
+    case MatrixHStack(m1, m2) => emitValDef(sym, src"$m1 ++ $m2")
+    case MatrixVStack(m1, m2) => emitValDef(sym, src"$m1.zip($m2).map(x => x._1 ++ x._2)")            
+    case MatrixNew(h, w, xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")}).sliding($w, $w).toIndexedSeq")
+    case MatrixLength(m) => emitValDef(sym, src"$m.length*$m(0).length")                        
+    case MatrixWidth(m) => emitValDef(sym, src"$m(0).length")                  
+    case MatrixHeight(m) => emitValDef(sym, src"$m.length")            
+    case MatrixNewZeros(h, w) => emitValDef(sym, src"IndexedSeq.fill($h, $w)(0)")
+    case MatrixNewOnes(h, w) => emitValDef(sym, src"IndexedSeq.fill($h, $w)(0)")
     case MatrixApply(l, e2) => emitValDef(sym, src"$l($e2)")    
     case _ => super.emitNode(sym, rhs) 
   }

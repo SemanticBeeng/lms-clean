@@ -53,7 +53,7 @@ trait MatrixGraphs extends Graphs {
   }
 
 
-  case object TimeNode extends MatrixNode {
+  case object TimesNode extends MatrixNode {
     val inputSize = 2
     def op(input: Input) =
       input(0) * input(1)
@@ -67,6 +67,37 @@ trait MatrixGraphs extends Graphs {
         None
       }
   }
+
+  case object HStackNode extends MatrixNode {
+    val inputSize = 2
+    def op(input: Input) =
+      input(0).hstack(input(1))
+
+    def size(input: scala.List[Size]) = {
+      val (a, b) = input(0)
+      val (c, d) = input(1)      
+      if (b.equals(d))
+        Some((a+c,d))
+      else
+        None
+      }
+  }
+
+  case object VStackNode extends MatrixNode {
+    val inputSize = 2
+    def op(input: Input) =
+      input(0).vstack(input(1))
+
+    def size(input: scala.List[Size]) = {
+      val (a, b) = input(0)
+      val (c, d) = input(1)      
+      if (a.equals(c))
+        Some((a,b+d))
+      else
+        None
+      }
+  }
+  
 
   case class ConstantNode(c: Data, val h: scala.Int, val w: scala.Int) extends MatrixNode {
     val inputSize = 0
@@ -147,7 +178,7 @@ trait MatrixGraph extends MatrixGraphs  {
   def funCG = {
     val l = scala.List(
       GraphNode("ADD", AddNode, scala.List("IN1", "IN2")),
-      GraphNode("ADD2", TimeNode, scala.List("ADD", "ADD")),
+      GraphNode("ADD2", TimesNode, scala.List("ADD", "ADD")),
       GraphNode("ADD3", AddNode, scala.List("ADD2", "IN3"))              
     )
     newGraph(l, 3, "ADD3")
