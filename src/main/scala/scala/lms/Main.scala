@@ -57,11 +57,15 @@ trait Compile extends ScalaCompile {
   self: RichExp =>
 
   dumpGeneratedCode = true
-  val codegen =  new ScalaGenRich { val IR:self.type = self}
+  val codegen =  new ScalaGenRich {
+    val IR:self.type = self
+    
+  }
 
   implicit def comp[A,B](f: A => B)(implicit repA: Rep[A], repB:Rep[B]): Exp[repA.Internal] => Exp[repB.Internal] = {
     (x:Exp[repA.Internal]) => repB.to(f(repA.from(x)))
   }
+
 
 }
 

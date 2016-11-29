@@ -10,11 +10,11 @@ trait Matrixs extends Base {
 
   type Matrix[T <: Num[T]] <: MatrixOps[T]
 
-  def NewMatrix[T <:Num[T]](ts: T*)(implicit rep: Rep[T]): Matrix[T]  
+  def NewMatrix[T <:Num[T]](h: Int, w:Int, ts: T*)(implicit rep: Rep[T]): Matrix[T]  
   def NewMatrixZeros[T <:Num[T]](hw: (Int, Int))(implicit rep: Rep[T]): Matrix[T]
   def NewMatrixOnes[T <: Num[T]](hw: (Int, Int))(implicit rep: Rep[T]): Matrix[T]  
 
-  type ScalaMatrix[T] = IndexedSeq[T]
+  type ScalaMatrix[T] = IndexedSeq[IndexedSeq[T]]
   
 
   implicit def matrixRep[T <: Num[T]](implicit rep: Rep[T]): Rep[Matrix[T]]
@@ -51,7 +51,7 @@ trait MatrixsExp extends BaseExp with Matrixs {
   case class MatrixLength[T](e1: Exp[ScalaMatrix[T]]) extends Def[scala.Int]      
   case class MatrixNewZeros[T](h: Exp[scala.Int], w: Exp[scala.Int]) extends Def[ScalaMatrix[T]]
   case class MatrixNewOnes[T](h: Exp[scala.Int], w: Exp[scala.Int]) extends Def[ScalaMatrix[T]]
-  case class MatrixNew[T](e: Exp[T]*) extends Def[ScalaMatrix[T]]  
+  case class MatrixNew[T](h: Exp[scala.Int], w: Exp[scala.Int], e: Exp[T]*) extends Def[ScalaMatrix[T]]  
   case class MatrixTimes[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
   case class MatrixAdd[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
   case class MatrixMinus[T](e1: Exp[ScalaMatrix[T]], e2: Exp[ScalaMatrix[T]]) extends Def[ScalaMatrix[T]]
@@ -91,21 +91,19 @@ trait MatrixsExp extends BaseExp with Matrixs {
 
 
   def matrixLift[U,T <: Num[T]](implicit tp: Rep[T], liftInner: Lift[U,T]) = new Lift[ScalaMatrix[U], Matrix[T]] {
-    def lift(l: ScalaMatrix[U]) = NewMatrix[T](l.map(x => liftInner.lift(x)):_*)
+    def lift(l: ScalaMatrix[U]) = NewMatrix[T](intLift.lift(1), intLift.lift(l.length), l.flatten.map(x => liftInner.lift(x)):_*)
   }
 
   def matrixLiftIdent[T <: Num[T]](implicit tp: Rep[T]) = matrixLift(tp, identLift)
   
   
   def matrix[T <: Num[T]](x: Exp[ScalaMatrix[Any]])(implicit tp: Rep[T]) = {
-    val r = Matrix[T](x)
-    println(x + "    " + r.e.tp + "....")
-    r
+    Matrix[T](x)    
   }
 
-  def NewMatrix[T <: Num[T]](x: T*)(implicit tp: Rep[T]) = {
+  def NewMatrix[T <: Num[T]](h:Int, w: Int, x: T*)(implicit tp: Rep[T]) = {
     implicit val tpm = tp.m
-    val l: Exp[ScalaMatrix[tp.Internal]] = MatrixNew[tp.Internal](x.map(tp.to(_)):_*)
+    val l: Exp[ScalaMatrix[tp.Internal]] = MatrixNew[tp.Internal](intRep.to(h), intRep.to(w), x.map(tp.to(_)):_*)
     matrix[T](l.asInstanceOf[Exp[ScalaMatrix[Any]]])
   }
   
@@ -174,44 +172,9 @@ trait ScalaGenMatrixs extends BaseGenMatrixs with ScalaGenNested {
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-    /*
-    case MatrixNew(xs) => emitValDef(sym, src"Matrix(${(xs map {quote}).mkString(",")})")
-
-    case MatrixConcat(xs,ys) => emitValDef(sym, src"$xs ::: $ys")
-    case MatrixCons(x, xs) => emitValDef(sym, src"$x :: $xs")
-    case MatrixHead(xs) => emitValDef(sym, src"$xs.head")
-    case MatrixTail(xs) => emitValDef(sym, src"$xs.tail")
-    case MatrixIsEmpty(xs) => emitValDef(sym, src"$xs.isEmpty")
-    case MatrixFromSeq(xs) => emitValDef(sym, src"Matrix($xs: _*)")
-    case MatrixMkString(xs) => emitValDef(sym, src"$xs.mkString")
-    case MatrixMkString2(xs,s) => emitValDef(sym, src"$xs.mkString($s)")
-    case MatrixMap(l,x,blk) => 
-      gen"""val $sym = $l.map { $x => 
-           |${nestedBlock(blk)}
-           |$blk
-           |}"""
-    case MatrixFlatMap(l, x, b) =>
-      gen"""val $sym = $l.flatMap { $x => 
-           |${nestedBlock(b)}
-           |$b
-           |}"""
-    case MatrixFilter(l, x, b) =>
-      gen"""val $sym = $l.filter { $x => 
-           |${nestedBlock(b)}
-           |$b
-           |}"""
-    case MatrixSortBy(l,x,blk) =>
-      gen"""val $sym = $l.sortBy { $x => 
-           |${nestedBlock(blk)}
-           |$blk
-           |}"""
-    case MatrixPrepend(l,e) => emitValDef(sym, src"$e :: $l")    
-    case MatrixToArray(l) => emitValDef(sym, src"$l.toArray")
-    case MatrixToSeq(l) => emitValDef(sym, src"$l.toSeq")
-     */
-    case MatrixTimes(m1, m2) => emitValDef(sym, src"$m1.zip($m2).map(x => (x._1 * x._2))")          
-    case MatrixAdd(m1, m2) => emitValDef(sym, src"$m1.zip($m2).map(x => (x._1 + x._2))")      
-    case MatrixNew(xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")})")    
+    case MatrixAdd(m1, m2) => emitValDef(sym, src"{val l = $m1(0).length; $m1.flatten.zip($m2.flatten).map(x => (x._1+x._2)).sliding(l, l).toIndexedSeq}")
+    case MatrixTimes(m1, m2) => emitValDef(sym, src"""{val a = $m1.length; val b = $m1(0).length; val c = $m2.length; val d = $m2(0).length; val ar = Array.fill(a, d)(0); for (i <- (0 until a)) for (j <- (0 until d)) for (k <- (0 until c)) ar(i)(j) += $m1(i)(k)*$m2(k)(j); ar.map(_.toIndexedSeq).toIndexedSeq}""")
+    case MatrixNew(h, w, xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")}).sliding($w, $w).toIndexedSeq")    
     case MatrixApply(l, e2) => emitValDef(sym, src"$l($e2)")    
     case _ => super.emitNode(sym, rhs) 
   }

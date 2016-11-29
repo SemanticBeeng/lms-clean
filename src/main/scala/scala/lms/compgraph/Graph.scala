@@ -72,8 +72,23 @@ trait Graphs {
       forward(input, dbg)._1
 
     def checkCycle() = {
-      
-      //TODO implement a cycling check algorithm
+      val nsByN = nodes.map(x => (x._1, x._2._2))
+      def hasCycle(nAndNs: (String, List[String]), visited: Set[String] = Set[String]()): Boolean =
+          if (visited.contains(nAndNs._1))
+            true
+          else
+            nAndNs._2.exists(
+              n =>
+              nsByN.get(n) match {
+                case Some(ns) =>
+                  hasCycle((n, ns), visited + nAndNs._1)
+                case None =>
+                  false
+              }
+            )
+      val cycle = nsByN.exists(hasCycle(_))
+      if (cycle)
+        throw new Exception("Cycle inside the graph. ABORT$$$$$")
     }
 
 

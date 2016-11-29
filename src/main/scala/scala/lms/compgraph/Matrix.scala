@@ -96,6 +96,8 @@ trait MatrixGraphs extends Graphs {
 
   trait MatrixGraph extends Graph {
 
+    checkDim()
+
     def checkDim() {
       var dim: Map[String, Size] =
         (1 to inputSize)
@@ -107,17 +109,18 @@ trait MatrixGraphs extends Graphs {
           dim(str)
         } else {
           val (n, i) = nodes(str)
-          val sizeInput = i.map(rec).toList
+          val sizeInput = i.map(rec).toList          
           val r = n.size(sizeInput).getOrElse(
             throw new Exception("Size doesn't check at node: " +n + " with inputs: " + sizeInput)
           )
+          println(str, r)
           dim += ((str, r))
           r
         }
       }
+      rec("OUT")
     }
     //checkDim at creation
-    checkDim()
 
   }
 
@@ -135,7 +138,7 @@ trait MatrixGraph extends MatrixGraphs  {
 
   type NumM = Int
 
-  val inputMatrixSize = IndexedSeq((1,4), (1,4), (1,5))
+  val inputMatrixSize = IndexedSeq((2,2), (2,2), (2,2))
   def simpleCG = {
     val l = scala.List(GraphNode("ADD", AddNode, scala.List("IN1", "IN2")))
     newGraph(l, 2, "ADD")
@@ -152,7 +155,7 @@ trait MatrixGraph extends MatrixGraphs  {
   
 
   def app(b: Int): Matrix[Int] = {
-    val a:Matrix[NumM] = IndexedSeq(b)
+    val a:Matrix[NumM] = IndexedSeq(IndexedSeq(b,b), IndexedSeq(b,b))
     //simple(scala.List(a, b))
     funCG(scala.List(a, a, a), false)
     //    add(a, a)
