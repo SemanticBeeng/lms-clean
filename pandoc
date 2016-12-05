@@ -1,0 +1,7 @@
+function pandoc-md {
+  while true ;do
+    inotifywait -e modify $1  2>/dev/null
+    date
+    pandoc $1 -V geometry:margin=2cm -o $1.pdf
+  done
+}
