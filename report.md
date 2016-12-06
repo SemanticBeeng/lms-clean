@@ -2,7 +2,7 @@
 title: New lms frontend and staged computation graphs 
 author:
 - \large \textbf{Ruben Fiszel} 
-date:  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  \ \ \ \today \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline ![aa](EPFL-Logo.jpg)
+date:  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \today \newline \newline ~ Supervised by Nada Amin and Prof. Martin Odersky ~ \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline \newline ![aa](EPFL-Logo.jpg)
 abstract: In this report, we explore staging, in particular the LMS framework and the development of its new frontend whose aim is ease the writing of staged dsl through, among others, shadowing of types. We also explore the usage of this new frontend for a particular case study\text{:} Staged computation graphs.
 institute: EPFL
 keywords: lms staging
@@ -16,7 +16,6 @@ thanks: Thanks to my beloved parents, my awesome supervisor Nada Amin, Prof. Mar
 # Introduction
 
 If programming can be considered as an art, then programming languages are the brush of the artists. The tools are chosen according to individual preferences, and of course the constraints of the desired final work. One of those major constraint is efficiency. Efficiency is less crucial nowadays than it was back when computing power was expensive and scarce, but it is still a very desirable goal. Efficiency can be achieved by writing explicitely very precisely each step of the program. To enable this, some programming languages are constrained to stay quite close from the model of the hardware. Those programming languages are called "low-level", because close from the machine and thus distant from the heights of abstraction. But as program grow more complex, the need for abstraction does too. 
-
 
 
 To fill the gap between abstraction and machine language, programming languages with complex compilers were born. Ironically, the first programmng language, lambda-calculus, was the epitomy of abstraction and thought of before the first very computer to execute it. Compilers are heavy machinery that applies all sort of optimization before translating source code to machine language. The more abstract the language, the more gap there is to fill, and the more compilers have opportunity to optimize. 
