@@ -4,7 +4,8 @@ $if(beamerarticle)$
 $endif$
 \usepackage{titlesec}
 
-\titleformat{\chapter}{\normalfont\huge}{}{20pt}{\huge\bf}
+\titleformat{\chapter}{\normalfont\huge}{\thechapter .}{20pt}{\huge\bf}
+
 
 
 $if(fontfamily)$
@@ -116,6 +117,30 @@ $endfor$
 $endif$
 $if(listings)$
 \usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstdefinestyle{scala}{
+  frame=tb,
+  language=scala,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  frame=single,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+}
 $endif$
 $if(lhs)$
 \lstnewenvironment{code}{\lstset{language=Haskell,basicstyle=\small\ttfamily}}{}
