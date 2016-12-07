@@ -1,5 +1,9 @@
-while true ;do
-    inotifywait -e modify report.md
+function gen {
     date
-    pandoc report.md --toc --template=report-tpl.tex -V geometry:margin=2cm   -o report.pdf
+    pandoc report.md --toc --template=report-tpl.tex  -o report.pdf
+}
+gen
+while true ;do
+    inotifywait -e modify report.md report-tpl.tex
+    gen
 done
