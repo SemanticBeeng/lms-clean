@@ -57,7 +57,7 @@ trait Graphs {
 
   trait Graph {
 
-    //check if there is circle in the graph
+    //check if there is cycle in the graph
     checkCycle()
 
     def inputSize: Int
@@ -88,7 +88,7 @@ trait Graphs {
             )
       val cycle = nsByN.exists(hasCycle(_))
       if (cycle)
-        throw new Exception("Cycle inside the graph. ABORT$$$$$")
+        throw new Exception("Cycle inside the graph. ABORT")
     }
 
 
