@@ -58,7 +58,8 @@ trait Graphs {
   trait Graph {
 
     //check if there is cycle in the graph
-    checkCycle()
+
+//    checkCycle()
 
     def inputSize: Int
 
@@ -68,31 +69,34 @@ trait Graphs {
       if (dbg)
         println("[debug] " +str)
 
-    def apply(input: List[Data], dbg:Boolean = false) =
+    def apply(input: IndexedSeq[Data], dbg:Boolean = false) =
       forward(input, dbg)._1
 
     def checkCycle() = {
+      println("check cycle")
       val nsByN = nodes.map(x => (x._1, x._2._2))
-      def hasCycle(nAndNs: (String, List[String]), visited: Set[String] = Set[String]()): Boolean =
-          if (visited.contains(nAndNs._1))
-            true
-          else
-            nAndNs._2.exists(
-              n =>
-              nsByN.get(n) match {
-                case Some(ns) =>
-                  hasCycle((n, ns), visited + nAndNs._1)
-                case None =>
-                  false
-              }
-            )
+      def hasCycle(nAndNs: (String, List[String]), visited: Set[String] = Set[String]()): Boolean = {
+        if (visited.contains(nAndNs._1))
+          true
+        else
+          nAndNs._2.exists(
+            n =>
+            nsByN.get(n) match {
+              case Some(ns) =>
+                hasCycle((n, ns), visited + nAndNs._1)
+              case None =>
+                false
+            }
+          )
+      }
       val cycle = nsByN.exists(hasCycle(_))
       if (cycle)
         throw new Exception("Cycle inside the graph. ABORT")
+      println("cycle checked")
     }
 
 
-    def forward(input: List[Data], dbg:Boolean = false) = {
+    def forward(input: IndexedSeq[Data], dbg:Boolean = false) = {
 
       //init datas with provided input as input Node
       var datas: Map[String, Data] =

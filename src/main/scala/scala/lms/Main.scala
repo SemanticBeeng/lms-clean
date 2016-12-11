@@ -7,13 +7,13 @@ import internal._
 import java.io.{File, PrintWriter}
 import compgraph._
 
-trait Prog extends Rich with MatrixGraph {
+trait Prog extends Rich with ArithGraphExp {
 
   def g[A:Rep](l:Int => Int, x:Int) =
     l(x)*2
 
-  val f = (arg:Int) =>  {
-    val stagedApp = fun(app)
+  val f = (arg: IndexedSeq[Int]) =>  {
+    val stagedApp  = fun(app)
     stagedApp(arg)
   }
 
@@ -35,7 +35,7 @@ object Main extends App with RichOptImpl with Compile with Prog{
 
   val exec = scala.List(
 //    ("Prog", smallProg, 1)
-    ("Staged execution", f, 3)
+    ("Staged execution", f, scala.IndexedSeq(3,4,5))
   )
 
   exec.foreach { case (title, f, arg) => 

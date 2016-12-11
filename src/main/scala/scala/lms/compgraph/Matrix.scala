@@ -14,7 +14,7 @@ trait MatrixGraphs extends Graphs {
   type G = MatrixGraph
   
 
-  def inputMatrixSize: IndexedSeq[Size]
+  def inputMatrixSize: scala.IndexedSeq[Size]
 
   trait MatrixNode extends Node {
 
@@ -188,7 +188,7 @@ trait MatrixGraph extends MatrixGraphs  {
   def app(b: Int): Matrix[Int] = {
     val a:Matrix[NumM] = IndexedSeq(IndexedSeq(b,b), IndexedSeq(b,b))
     //simple(scala.List(a, b))
-    funCG(scala.List(a, a, a), false)
+    funCG(scala.IndexedSeq(a, a, a), false)
     //    add(a, a)
   }
   

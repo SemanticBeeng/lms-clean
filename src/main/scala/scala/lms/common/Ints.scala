@@ -22,7 +22,7 @@ trait Ints extends Base {
 }
 
 trait IntsExp extends BaseExp with Ints {
-  self: Booleans with IfThenElse =>
+  self: Booleans =>
 
   sealed trait IntDef[A] extends Def[A]
   case class IntPlus(e1: Exp[scala.Int], e2: Exp[scala.Int])  extends IntDef[scala.Int]
@@ -31,7 +31,9 @@ trait IntsExp extends BaseExp with Ints {
   case class IntDiv(e1: Exp[scala.Int], e2: Exp[scala.Int])   extends IntDef[scala.Int]
   case class IntMod(e1: Exp[scala.Int], e2: Exp[scala.Int])   extends IntDef[scala.Int]
   case class IntGT(e1: Exp[scala.Int], e2: Exp[scala.Int])    extends IntDef[scala.Boolean]
-  case class IntLT(e1: Exp[scala.Int], e2: Exp[scala.Int])    extends IntDef[scala.Boolean]      
+  case class IntLT(e1: Exp[scala.Int], e2: Exp[scala.Int])    extends IntDef[scala.Boolean]
+  case class IntMin(e1: Exp[scala.Int], e2: Exp[scala.Int])    extends IntDef[scala.Int]
+  case class IntMax(e1: Exp[scala.Int], e2: Exp[scala.Int])    extends IntDef[scala.Int]          
 
 
   case class Int(e: Exp[scala.Int]) extends IntOps[Int] with Expressable[scala.Int] {
@@ -45,10 +47,8 @@ trait IntsExp extends BaseExp with Ints {
     def %(y: Int) = int(int_mod(e, y.e))
     def >(y: Int) = boolean(int_gt(e, y.e))
     def <(y: Int) = boolean(int_lt(e, y.e))
-    def min(y: Int): Int =
-      __ifThenElse(this < y, this, y)    
-    def max(y: Int): Int =
-      __ifThenElse(this > y, y, this)
+    def min(y: Int): Int = int(int_min(e, y.e))
+    def max(y: Int): Int = int(int_max(e, y.e))
     
   }
 
@@ -57,7 +57,9 @@ trait IntsExp extends BaseExp with Ints {
   private val repE = RepE[scala.Int, Int](x => int(x))
   implicit val intRep: Rep[Int] { type Internal = scala.Int } = repE
   implicit val intLift: Lift[scala.Int,Int] = repE
-  
+
+  protected def int_max(e1: Exp[scala.Int], e2: Exp[scala.Int]):  Exp[scala.Int]
+  protected def int_min(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int]  
   protected def int_plus(e1: Exp[scala.Int], e2: Exp[scala.Int]):  Exp[scala.Int]
   protected def int_minus(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int]
   protected def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int]
@@ -65,6 +67,7 @@ trait IntsExp extends BaseExp with Ints {
   protected def int_mod(e1: Exp[scala.Int], e2: Exp[scala.Int]):   Exp[scala.Int]
   protected def int_gt(e1: Exp[scala.Int], e2: Exp[scala.Int]):    Exp[scala.Boolean]
   protected def int_lt(e1: Exp[scala.Int], e2: Exp[scala.Int]):    Exp[scala.Boolean]
+
 }
 
 //trait Derivate extends ForwardTransformer with BaseFatExp with RichExp {
@@ -86,6 +89,8 @@ trait IntsExp extends BaseExp with Ints {
 trait IntsImpl extends IntsExp {
   self: Booleans with IfThenElse =>
 
+  protected def int_min(e1: Exp[scala.Int], e2: Exp[scala.Int])  = IntMin(e1, e2)
+  protected def int_max(e1: Exp[scala.Int], e2: Exp[scala.Int]) = IntMax(e1, e2)  
   protected def int_plus(e1: Exp[scala.Int], e2: Exp[scala.Int])  = IntPlus(e1, e2)
   protected def int_minus(e1: Exp[scala.Int], e2: Exp[scala.Int]) = IntMinus(e1, e2)
   protected def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]) = IntTimes(e1, e2)
@@ -113,6 +118,16 @@ trait IntsOptImpl extends IntsImpl with EffectExp {
     case (l, Const(0)) => l
     case (Const(x), Const(y)) => Const(x-y)
     case _ => super.int_minus(e1, e2)      
+  }
+
+  override def int_min(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
+    case (Const(x), Const(y)) => Const(x.min(y))
+    case _ => super.int_min(e1, e2)
+  }
+
+  override def int_max(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
+    case (Const(x), Const(y)) => Const(x.max(y))
+    case _ => super.int_max(e1, e2)      
   }
   
   override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
@@ -149,6 +164,8 @@ trait IntsOptImpl extends IntsImpl with EffectExp {
 
   override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = {
     e match {
+      case IntMax(a,b) => int_max(f(a), f(b))
+      case IntMin(a,b) => int_min(f(a), f(b))        
       case IntPlus(a,b) => int_plus(f(a), f(b))
       case IntMinus(a,b) => int_minus(f(a), f(b))        
       case IntTimes(a,b) => int_times(f(a), f(b))
@@ -167,12 +184,14 @@ trait ScalaGenIntsExp extends ScalaGenBase {
   import IR._
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
-    case IntPlus(a,b) =>  emitValDef(sym, "" + quote(a) + "+" + quote(b))
-    case IntMinus(a,b) => emitValDef(sym, "" + quote(a) + "-" + quote(b))
-    case IntTimes(a,b) => emitValDef(sym, "" + quote(a) + "*" + quote(b))
-    case IntDiv(a,b) =>   emitValDef(sym, "" + quote(a) + "/" + quote(b))
-    case IntGT(a,b) =>   emitValDef(sym, "" + quote(a) + ">" + quote(b))
-    case IntLT(a,b) =>   emitValDef(sym, "" + quote(a) + "<" + quote(b))                  
+    case IntPlus(a,b) =>  emitValDef(sym, "" + quote(a) + " + " + quote(b))
+    case IntMinus(a,b) => emitValDef(sym, "" + quote(a) + " - " + quote(b))
+    case IntMin(a,b) => emitValDef(sym, "" + quote(a) +".min("+quote(b)+")")            
+    case IntMax(a,b) => emitValDef(sym, "" + quote(a) +".max("+quote(b)+")")      
+    case IntTimes(a,b) => emitValDef(sym, "" + quote(a) + " * " + quote(b))
+    case IntDiv(a,b) =>   emitValDef(sym, "" + quote(a) + " / " + quote(b))
+    case IntGT(a,b) =>   emitValDef(sym, "" + quote(a) + " > " + quote(b))
+    case IntLT(a,b) =>   emitValDef(sym, "" + quote(a) + " < " + quote(b))                  
     case _ => super.emitNode(sym, rhs)
   }
 

@@ -11,6 +11,7 @@ trait Lists extends Base {
 
   def NewList[T:Rep](x: T*): List[T]
 
+
   implicit def listRep[T:Rep]: Rep[List[T]]
   implicit def listLift[U, T](implicit tp: Rep[T], lift: Lift[U, T]) : Lift[scala.List[U], List[T]]
   implicit def listLiftIdent[T](implicit tp: Rep[T]) : Lift[scala.List[T], List[T]]   
@@ -18,6 +19,7 @@ trait Lists extends Base {
   trait ListOps[T] {
     def length: Int
     def apply(x: Int): T
+    def toScalaList(size: scala.Int): scala.List[T]
   }
   
 
@@ -42,6 +44,7 @@ trait ListsExp extends BaseExp with Lists {
 
     def length = int(list_length(e))
     def apply(x: Int) = tp.from(list_apply(typedE, x.e))
+    def toScalaList(size: scala.Int) = (0 until size).map(x => apply(int(x))).toList
   }
 
 

@@ -219,9 +219,7 @@ eg: 'if (t1) t1 else t2 becomes'  '__ifThenElse(t1, t2, t3)'. We can use this ov
 
 Computation graphs are directed graph made of nodes that represent a computation. It is an abstract model that can generalize many functions. It is very common in distributed computing and it is how most deep learning (TensorFlow, Deeplearning4j) represents their neural networks models. 
 
-Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inputs is the special case of Input nodes and having 0 output is the special case of output nodes. The input nodes form the input layer. The output nodes form the output layer. We will only consider feedforward computation graphs without any cycles.
-
-An example of a node can be the Add node. It takes two entry and output their sum.
+Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inputs is the special case of Input nodes and having 0 output is the special case of output nodes. The input nodes form the input layer. The output nodes form the output layer. We will only consider feedforward computation graphs without any cycles. An example of a node can be the Add node. It takes two entry and output their sum.
 
 The benefits of staging for Computation Graph is that there it would be advantageous to separate the construction of the graph and the execution of computation on this graph. Indeed, it is possible to check some properties on the computation graph that ensure that the graph has proper form. Furthermore, it is possible to apply transformation to the graph such as computing the gradient of the function represented by the graph. Last but not least, computation graph are abstractions that are convenient to build, conceptualize and handle but not very efficient because of the level of abstraction. Fortunately, after staging unecessary indirections are removed and the whole function is linearized into the bare required operations.
 
@@ -235,16 +233,20 @@ trait Graphs {
   type Output = Data
   type G <: Graph 
   type N <: Node
-  type R = (N, List[String])
-  trait Node { ... }
+  
+  trait Node { 
+      def output(input: Input): Output 
+  }
+	
 
   ...
-  
+
   trait Graph {
 
     //check if there is cycle in the graph
     checkCycle()
     def inputSize: Int
+	type R = (N, List[String])  	
     def nodes: Map[String, R]
     def apply(input: List[Data]) = { ... }
     def checkCycle() = { ...  }

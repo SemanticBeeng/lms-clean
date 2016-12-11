@@ -107,8 +107,7 @@ trait ArithGraph extends ArithGraphs  {
     newGraph(l, 3, "ADD3")
   }
   
-  
-
+ 
 }
 
 
@@ -120,20 +119,17 @@ trait ArithGraphExp extends ArithGraph with Base {
   lazy val zero: Int = 0
   lazy val one: Int = 1
 
-  def app(a: Data): List[Data] = {
-    //simple(List(a, b))
-    funCG.backpropagate(List(a, a, a))
-//    funCG(List(a, a, a), true)
-//    add(a, a)
+  def app(l: IndexedSeq[Data]): Data = {
+    //    funCG.backpropagate(l)
+    funCG(l.toScalaIndexedSeq(3))
   }
-  
-  
+
 }
 
 
 
 //Not using staging
-object ArithGraphInt extends ArithGraph {
+trait ArithGraphInt extends ArithGraph {
 
   import Numeric._
   type Data = IntNum
@@ -144,7 +140,7 @@ object ArithGraphInt extends ArithGraph {
   def app(b: Int) = {
     val a = IntNum(b)
     //simple(List(a, b))
-    funCG(List(a, a, a), true)
+    funCG(IndexedSeq(a, a, a), true)
     //    add(a, a)
   }
   

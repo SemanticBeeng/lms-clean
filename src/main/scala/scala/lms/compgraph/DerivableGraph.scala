@@ -64,7 +64,7 @@ trait DerivableGraphs extends Graphs {
       tsort(toPred, Seq())
     }
 
-    def backpropagate(input: List[Data], dbg:Boolean = false): List[Data] = {
+    def backpropagate(input: IndexedSeq[Data], dbg:Boolean = false): List[Data] = {
 
       var derivatives = Map[String, Data](("OUT", one)).withDefaultValue(zero)
 
