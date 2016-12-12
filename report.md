@@ -191,6 +191,9 @@ def infix_+(e1: Rep[Int], e2:Rep[Int])
 
 So as long as the corresponding methods or operators were in scope, the user was able to manipulate conveniently `Rep[A]` as if they were `A`.
 
+### Lift
+
+The LMS solution to use Literals and other explicitly declared object is to use global conversion methods that know how to convert some present value to staged value. Their role is to convert `A` into `Rep[A]`. Those conversions are implicits and enable to write such declaration `val a: Rep[Int] = 2`. What is really happening is the scala solve the implicit lift conversion and it becomes `val a: Rep[Int] = lift(2)(intLift)` with `intLift` being an instance of `Lift[Int,Rep[Int]]`. The sole purpose of `Lift` instance is to lift values into lifted types.
 
 ## Scala virtualization
 
@@ -199,25 +202,65 @@ eg: 'if (t1) t1 else t2 becomes'  '__ifThenElse(t1, t2, t3)'. We can use this ov
 
 ## Smart constructors
 
-### deep reuse of the embedding language order
+Smart constructors are optimised constructors of composite def that can apply optimisations based solely on the argumen of the constructor. For instance, for the constructor of IntTimes which represents multiplication of integer we can potentially apply some early reductions.
 
+~~~scala
+  override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
+    case (Const(0), r) => Const(0)
+    case (l, Const(0)) => Const(0)
+    case (Const(1), r) => r
+    case (l, Const(1)) => l
+    case (Const(x), Const(y)) => Const(x*y)
+    case _ => IntTimes(e1, e2)            
+  }
+~~~
 
-### library author
-### delite
-### user
+### Deep reuse of the evaluation order
+
+Deep reuse of the embedding language order is simpler than it sounds. The embedding language is Scala. The transformations on Expressions are such that they depend on the order of evaluation of the operations applied to the lifted types.
+
+For instance:
+
+~~~scala
+val a: Rep[Int] = 2 //Const(2)
+val b: Rep[Int] = 3 //Const(3)
+val c: Rep[Int] = 2 + 3 //IntAdd(Const(2), Const(3))
+val d: Rep[Int] = c + 4 //IntAdd(IntAdd(Const(2), Const(3)), Const(4))
+~~~
+
+Contrary to plain Scala, `a`, `b`, `c`, `d` here are not "simple" value. They are each a representation of a tree of expression. `a` and `b` are trivial trees of one node: A constant leaf. However, `c` and `d` start to becomes more complex. The actual content of each tree depend of the evaluation order of the frontend operations by Scala. At code generation, the tree order is conserved through let bindings. Nevertheless, between the tree construction and code generation, some transformation might have changed the tree. Common Subexpression Elimination, Code motion, Loop Unrolling, Dead Code Elimination, Loop Fusion and more are among such potential transformations. Transformations are written in LMS as subtype of `Transformer`.
+
+## DSL as libraries
+
+LMS enables meta-programming and doesn't necessarily require the use of DSL. Nevertheless, a powerful way to use LMS is to provide DSL written on top of LMS that includes all the necessary lifted types and `Transformer` to build application from. The `common/` part of LMS are a regroupment of lifted types and `Transformer` that should be needed in most cases. It includes, if-then-else, primitive types, and useful transformers such as CSE and code motion. On top of that, libraries author can add their own lifted types and transformer to provide a new « flavor » of LMS that form a DSL.
+
+## Delite
+
+Delite is a research project from Stanford University's Pervasive Parallelism Laboratory (PPL). Delite is built on top of LMS and could be seen as an alternative of `common/` targeted for high-performance parrallel DSL.
+
+## User
+
+Users are writers of meta-programs using a DSL or even just bare LMS.
 
 
 # The new frontend
 
+LMS is reimplemented with a new frontend. One goal of this reimplementation is to achieve sufficient feature parity with the previous version of LMS to enable to implement meta-programs in the computation graph domain as explained further in part 3.
+
 ## Lift
+
 ## Typeclass
+
 ## Typeclass overloading
+
 ## Primitives types and collections
 
 
 # Computation Graph
 
 Computation graphs are directed graph made of nodes that represent a computation. It is an abstract model that can generalize many functions. It is very common in distributed computing and it is how most deep learning (TensorFlow, Deeplearning4j) represents their neural networks models. 
+
+![Example of a simple arithmethic computation graph](comp-graph.png){ width="70%" }
 
 Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inputs is the special case of Input nodes and having 0 output is the special case of output nodes. The input nodes form the input layer. The output nodes form the output layer. We will only consider feedforward computation graphs without any cycles. An example of a node can be the Add node. It takes two entry and output their sum.
 
@@ -276,21 +319,42 @@ Here Data can either be either `dsl.Int` for a staged computation graph or else 
 
 ## Cycle check
 
-A staged computation graph builds the graph during staging. This means that all the verification that should happen during the building of the graph can happen during staging. This adds additional guarantees at runtime, here that our staged computation graph doesn't contain any cycle.
+A staged computation graph builds the graph during staging. This means that all the verification that should happen during the building of the graph can happen during staging. This adds additional guarantees at runtime, here that our staged computation graph does not contain any cycle.
 
 ## Arithmetic
+
+We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that the one of Int, Double and Float implement. Those kind of computation graph are a good sanity check as well as a clear example of a compuation graph. We will use them to do benchmarking of their evaluation time perfomance as a staged meta-program and as a normal program. We do not take into account the time the efficiency of building those graphs and do the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Node that represent some fixed weights inside the graph.
+
 ### Benchmark
 
+For benchmarking purposes, we will randomly generate 2000 nodes big graph. The graph are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
+
+We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implemenation of Int. The optimisd implementation of Int differs from the non optimised optimisation of Int by the usage smart-constructors that can optimize some operation such as multiplication with 0 or 1, or addition with 0 or binary operation on constants. 
+
+We build 100 different graph and average the evaluation time to achieve meaninful results. Benchmarks are run on a thinkpad t440s:
+
+Average evalation time: 
+
+* normal program: 2156 microseconds
+* staged program: 171 microseconds.
+
+
 ## DerivableGraph
-### Backpropagation
+
+We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph. our backpropagation algorithm is common for both environment. This shows the flexibility of LMS.
 
 ## MatrixGraph
-### Dimensions check
+
+Last but not least, we implement computation graph able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging.
 
 
 # Conclusion {-}
-blablabla
+
+
+# References {-}
+
 
 # Acknowledgement {-}
 
 Thanks to my beloved parents, my awesome supervisor Nada Amin, Prof. Martin Odersky,  the lms master and author Tiark Rompf, and the delite folks Kevin James Brown and David Koeplinger.
+

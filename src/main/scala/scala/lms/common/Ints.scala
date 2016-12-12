@@ -133,6 +133,8 @@ trait IntsOptImpl extends IntsImpl with EffectExp {
   override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
     case (Const(0), r) => Const(0)
     case (l, Const(0)) => Const(0)
+    case (Const(1), r) => r
+    case (l, Const(1)) => l
     case (Const(x), Const(y)) => Const(x*y)
     case _ => super.int_times(e1, e2)            
   }

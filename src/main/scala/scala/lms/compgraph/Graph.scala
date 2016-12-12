@@ -65,7 +65,7 @@ trait Graphs {
 
     def nodes: Map[String, R]
 
-    def debug(str:String, dbg:Boolean) =
+    def debug(str: =>String, dbg:Boolean) =
       if (dbg)
         println("[debug] " +str)
 
