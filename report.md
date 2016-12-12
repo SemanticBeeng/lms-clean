@@ -1,5 +1,5 @@
 ---
-title: New lms frontend and staged computation graphs 
+title: Staged meta-programming, new lms frontend and computation graphs 
 author:
 - \large \textbf{Ruben Fiszel} 
 date:  \today 
@@ -172,7 +172,7 @@ TP(Sym(4), Minus(Sym(2), Sym(3)))
 But can be manipulated as:
 
 ~~~scala
-Minus(Add(d, e), Times(f, g))
+Minus(Add(a, b), Times(a, b))
 ~~~
 
 We will not describe further the IR since this project focus on the frontend. It will be clearer later what separates the backend from the frontend. But a simple informal definition is that the subset of scala that is available to the user to write meta-programs are the frontend. This include the lifted types interface and the building of the IR as a tree mode solely of the Def hybrid nodes. The IR representation as a sea of nodes, the IR manipulation such as transformers and traversals and code generation are the backend.
@@ -292,13 +292,80 @@ def square[A: Num](x: A) = {
 
 ~~~
 
-## Lift
+The idea behind the new frontend is to use that typeclass pattern as staging annotation instead of the Rep monad.
 
-## Typeclass
+In the previous LMS, we manipulated lifted types Rep[A] and define functions specific function for that Rep[A].
+In the new LMS, we manipulate dsl.A that have Rep typeclass instances defined in scope.
+
+~~~scala
+
+trait Rep[A]
+
+case class Int(e: Exp[scala.Int]) {
+	def *(y: Int) = IntTimes(e, y.e)
+}
+
+implicit object intRep extends Rep[Int]
+
+
+def ifThenElse[A: Rep](a: dsl.Boolean, b: A, c: A): A
+
+~~~
+
+## Type shadowing
+
+The convenient benefit of using dsl.A is that once the dsl is imported, we can shadow the type A by dsl.A. For instance, dsl.Int shadows scala.Int. This is specially useful to write meta-programs for which the lifted type of A, dsl.A, is the most common meaning of the type A.
 
 ## Typeclass overloading
 
+One of the issue encountered with the new frontend of LMS is «typeclass overloading». 
+In the previous LMS, equals could be defined in such way:
+
+~~~scala
+
+	def __equal[A, B](a: Rep[A], b:Rep[B]): Rep[Boolean]
+	def __equal[A, B](a: Rep[A], b:B): Rep[Boolean]	
+	def __equal[A, B](a: A, b:Rep[B]): Rep[Boolean]		
+	def __equal[A, B](a: A, b:B): Boolean
+	
+~~~
+
+The scala choosed the right dispatch based on the most specialized definition of __equal. Note that `def __equal[A, B](a: A, b:B)` is a more general function than all above but only get triggered if none of the above case do not trigger.
+
+Now with the typeclass pattern we could attempt such rewrite:
+
+~~~scala
+
+	def __equal[A:Rep, B:Rep](a: A, b:B): Boolean
+	def __equal[A:Rep, B](a: A, b:B): Boolean
+	def __equal[A, B:Rep](a: A, b:B): Boolean
+	def __equal[A, B](a: A, b:B): scala.Boolean
+	
+~~~
+
+The issue is that context bound are only syntaxic sugar and those functions are eventually desugared into: 
+
+~~~scala
+
+	def __equal[A, B](a: A, b:B)(implicit repA: Rep[A], implicit repB: Rep[B]): Boolean
+	def __equal[A, B](a: A, b:B)(implicit repA: Rep[A]): Boolean
+	def __equal[A, B](a: A, b:B)(implicit repB: Rep[B]): Boolean
+	def __equal[A, B](a: A, b:B): scala.Boolean
+	
+~~~
+
+The issue is that in this curried form, none of the first three definitions of __equal are more specialized than the last one. Hence, it is impossible to overload equal in this manner. 
+
 ## Primitives types and collections
+
+The new LMS frontend required to adapt the whole `internal/` to the new typeclass pattern but it also required to write primitive types and collections in a modified manner. We implementend the primitive types: Int, Float, Double, Long as well as String, Boolean and the collections Array, Matrix and List. We also implemented staged lambda functions, staged named functions, staged if-then-else blocks.
+
+Lifted types are organized into three or more traits:
+
+* As extends Base
+* AsExp extends BaseExp
+* AsImpl extends AsExp
+* AsOptImpl extends AsImpl
 
 
 # Computation Graph
@@ -378,12 +445,12 @@ We compare the non-staged computation graph to a meta-program that doesn't benef
 
 We build 100 different graph and average the evaluation time to achieve meaninful results. Benchmarks are run on a thinkpad t440s:
 
-[to do in GNUPLOT]
-
 Average evalation time: 
 
-* normal program: 2156 microseconds
+* non-staged program: 2156 microseconds
 * staged program: 171 microseconds.
+
+![Performance chart](perf.png){ width="80%" }
 
 
 ## DerivableGraph
@@ -399,6 +466,11 @@ Last but not least, we implement computation graph able to handle Matrix as Data
 
 
 # References {-}
+
+* Tiark's thesis: [Lightweight Modular Staging and Embedded Compilers: Abstraction without Regret for High-Level High-Performance Programming](https://infoscience.epfl.ch/record/180642/files/EPFL_TH5456.pdf)
+* [Calculus on Computational Graphs: Backpropagation](https://colah.github.io/posts/2015-08-Backprop/)
+
+...
 
 
 # Acknowledgement {-}
