@@ -30,25 +30,13 @@ One solution to both issue could be to extend the compiler for each domain and h
 
 ## Why staging
 
-To see the benefits of a staged meta-programming, we will start by an example where it benefits shine: sparse vector multiplication. 
+To see the benefits of a staged meta-programming, we will start by an example where its benefits shine clearly: sparse vector multiplication. 
 
+Assume that v1 and v2 are sparse vector of size N with K cells containing Integers: N >> K.
 ~~~scala
-val v1: IndexedSeq
-val block = {
-	val prng = new util.Random(123)
-	def rd(i: Int) = prng.nextInt(i)
-
-	def newVec(size: Int) = {
-		val a = Array.fill(size)(0)
-		for (i <- (1 to 10))
-			a(rd(size)) = rd(100)
-		a
-	}
-	
-	val v2 = newVec(1000)
-
-	v1.zip(v2) map { case (x1, x2) => x1 * x2 } sum
-}
+val v1: IndexedSeq[Int]
+val v2: IndexedSeq[Int]
+v1.zip(v2) map { case (x1, x2) => x1 * x2 } sum
 ~~~
 This work but it is terribly inefficient. What about all those 0 multiplications. Surely, we can do something better. There is 3 cases.
 
@@ -56,30 +44,36 @@ This work but it is terribly inefficient. What about all those 0 multiplications
 * v1 is known at compile time
 * v1 and v2 are both only known at runtime
 
-In all three cases, staged meta-programming is able to generate efficient code that avoid the (1000 [zip]+ 1000 [*]) operations at runtime and reduce it to 10 operations (no more zip) and even 0 operations in the first case!
+In the two first case, staged meta-programming is able to generate efficient code that avoid the (N [zip] + N [*]) operations at runtime and reduce it to K operations (no more zip) and even 0 operations in the first case!
 
 How ? Well it is all about available information. We will start with the first case which is the simplest to understand:
-We know at staging time all the data and all the operation that is applied to the data. Instead of waiting for runtime to apply those operations, we can generate a new block that is strictly equivalent. *Note* that to ensure equivalence, we use a fixed seed so that the number generation is deterministic and the current state of the world at execution is not relevant. So the generated code can be reduced to:
+We know at staging time all the data and all the operations that are applied to the data. Instead of waiting for runtime to apply those operations, we can generate a new block that is strictly equivalent. We use the simple optimisation `0*a = 0`, `0+a=a`, `(A) + (B) = (A+B)`, `(A) * (B) = (A*B)`. `()` surrounds integers whose value are known during staing.
+
+The generated code in the first can be reduced to:
 
 ~~~scala
-val stagedBlock = C
+val x0 = C
+x0
 ~~~
 
-where C is a constant which value depend on v1
+where C is a constant which value depend on v1 and. 
+During staging, the expression corresponding to x0 is reduced from a large tree of 
+`[(D) * (E)] + ... + [(F) * (G)] = (I) + ... + (J) = (C)`
 
-In the second and third case the code can be generated to this reduced form:
-
-//TODO
+In the second case, let assume that `i1, i2, ..., i10` are the index of the non-zero value of v1. The code can be generated to this reduced form:
 
 ~~~scala
-val stagedBlock = {
-	val x0 = new util.Random(123)
-	val x1 = v1(x0.nextInt(100)) * rd(100)
-	val x2 = v1(rd(100)) * rd(100)
-	val x3 = x2 + x1
-	val x4 = v1(rd(100)) * rd(100)		
-}
+val x0 = v1(i0) * v2(i0)
+val x1 = v1(i1) * v2(i1)
+val x2 = x0 + x1
+val x3 = v1(i2) * v2(i2)
+val x4 = x3 + x2
+...
+val x12 = x11 + x10
+x12
 ~~~
+
+In the third case, we can still gain efficiency by replacing some of the abstraction overhead from zip and sum into simple plain `+` and `*` operations.
 
 ## LMS
 
