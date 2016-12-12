@@ -247,6 +247,51 @@ Users are writers of meta-programs using a DSL or even just bare LMS.
 
 LMS is reimplemented with a new frontend. One goal of this reimplementation is to achieve sufficient feature parity with the previous version of LMS to enable to implement meta-programs in the computation graph domain as explained further in part 3.
 
+The new frontend change the type of lifted type from Rep monads to a Rep context bound. A context bound in Scala is used in the typeclass pattern.
+
+## Typeclass pattern
+
+The typeclass patterns is an alternative to inheritance to write programs that can handle any type that share a common interface. With subtyping, we declare that if A is a child of B (A <: B), then any instance of A can be treated as B (A is a B). Then we can write functions that are polymorphic to the common interface of B. 
+
+With the typeclass pattern, we declare that as long as there exists a typeclass instance for the right parametrized type, we can write our polymorphic function.
+
+~~~scala 
+//inheritance
+trait Num[A] {	
+	def *(y: A): A
+	...
+}
+
+class Int extends Num[Int]{
+	def *(y: Int): Int = ...
+}
+
+def square[A](x: Num[A]) = x*x
+~~~
+
+~~~scala 
+//typeclass pattern
+trait Num[A] {	
+	def times(x: A, y: A): A
+	...
+}
+
+class Int {
+	def *(y:Int): Int = ...
+	...
+}
+
+implicit object numInt extends Num[Int] {
+	def times(x: Int, y: Int) = x*y
+}
+
+def square[A: Num](x: A) = {
+	val num = implicitly[Num[A]]
+	num.times(x, x)
+}
+
+~~~
+
 ## Lift
 
 ## Typeclass
@@ -332,6 +377,8 @@ For benchmarking purposes, we will randomly generate 2000 nodes big graph. The g
 We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implemenation of Int. The optimisd implementation of Int differs from the non optimised optimisation of Int by the usage smart-constructors that can optimize some operation such as multiplication with 0 or 1, or addition with 0 or binary operation on constants. 
 
 We build 100 different graph and average the evaluation time to achieve meaninful results. Benchmarks are run on a thinkpad t440s:
+
+[to do in GNUPLOT]
 
 Average evalation time: 
 
