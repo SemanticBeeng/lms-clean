@@ -11,7 +11,6 @@ trait Strings extends Base {
   type StringR <: StringOps[StringR]
   implicit def stringTyp: Rep[StringR] { type Internal = java.lang.String }
   implicit def stringLift: Lift[java.lang.String, StringR]
-  def string: Exp[java.lang.String] => StringR
 }
 
 trait StringsExp extends BaseExp with Strings {

@@ -12,8 +12,6 @@ trait Booleans extends Base {
 
   type Boolean <: BooleanOps[Boolean]
 
-  def boolean: Exp[scala.Boolean] => Boolean  
-
   implicit def booleanRep: Rep[Boolean] { type Internal = scala.Boolean }
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
 
@@ -31,8 +29,7 @@ trait BooleansExp extends BaseExp with Booleans {
     def unary_! = boolean(bool_not(e))
   }
   
-
-  def boolean = Boolean
+  def boolean: Exp[scala.Boolean] => Boolean = Boolean
 
   def bool_and(e1: Exp[scala.Boolean], e2: Exp[scala.Boolean]): Exp[scala.Boolean]
   def bool_or(e1: Exp[scala.Boolean], e2: Exp[scala.Boolean]): Exp[scala.Boolean]

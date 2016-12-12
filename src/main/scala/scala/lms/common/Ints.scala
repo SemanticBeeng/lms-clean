@@ -14,7 +14,7 @@ trait Ints extends Base {
 
   type Int <: IntOps[Int] { type B = Boolean }
 
-  def int: Exp[scala.Int] => Int     
+
 
   implicit def intRep: Rep[Int] { type Internal = scala.Int }
   implicit def intLift: Lift[scala.Int,Int]
@@ -22,7 +22,7 @@ trait Ints extends Base {
 }
 
 trait IntsExp extends BaseExp with Ints {
-  self: Booleans =>
+  self: BooleansExp =>
 
   sealed trait IntDef[A] extends Def[A]
   case class IntPlus(e1: Exp[scala.Int], e2: Exp[scala.Int])  extends IntDef[scala.Int]
@@ -52,7 +52,7 @@ trait IntsExp extends BaseExp with Ints {
     
   }
 
-  def int = Int
+  def int: Exp[scala.Int] => Int = Int
 
   private val repE = RepE[scala.Int, Int](x => int(x))
   implicit val intRep: Rep[Int] { type Internal = scala.Int } = repE
@@ -87,7 +87,7 @@ trait IntsExp extends BaseExp with Ints {
 //}
  
 trait IntsImpl extends IntsExp {
-  self: Booleans with IfThenElse =>
+  self: BooleansExp  =>
 
   protected def int_min(e1: Exp[scala.Int], e2: Exp[scala.Int])  = IntMin(e1, e2)
   protected def int_max(e1: Exp[scala.Int], e2: Exp[scala.Int]) = IntMax(e1, e2)  
@@ -104,7 +104,7 @@ trait IntsImpl extends IntsExp {
 
 
 trait IntsOptImpl extends IntsImpl with EffectExp {
-  self: Booleans with IfThenElse =>
+  self: BooleansExp =>
 
   override def int_plus(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
     case (Const(0), r) => r

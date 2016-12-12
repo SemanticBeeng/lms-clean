@@ -10,10 +10,11 @@ trait Units extends Base {
 
   def currentNano(x:Any): Long
   def printlnR[A:Rep](x:A): Unit
+  
 }
 
 trait UnitsExp extends BaseExp with Units {
-  self: Longs =>
+  self: LongsExp =>
 
   case class CurrentNano(x:Exp[Any]) extends Def[scala.Long]
   case class Print(x:Exp[Any]) extends Def[scala.Unit]  
@@ -23,7 +24,7 @@ trait UnitsExp extends BaseExp with Units {
   def unit: Exp[scala.Unit] => Unit = Unit
 
   private val repE = RepE[scala.Unit, Unit](Unit)
-  implicit val unitTyp = repE  
+  implicit val unitTyp: Rep[Unit] { type Internal = scala.Unit } = repE  
 
   def currentNano(x:Any): Long
   def printlnR[A:Rep](x:A): Unit
@@ -31,7 +32,7 @@ trait UnitsExp extends BaseExp with Units {
 }
 
 trait UnitsImpl extends UnitsExp {
-  self: Longs =>
+  self: LongsExp =>
 
 
   def currentNano(x:Any) = long(CurrentNano(x))

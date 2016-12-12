@@ -10,8 +10,6 @@ import scala.collection.generic.FilterMonadic
 
 trait Base {
   // preliminaries
-  @implicitNotFound("${T} is not a DSL type")
-  type Exp[+T]
 
   trait Lift[A,B] {
     def lift(x:A):B
@@ -20,6 +18,11 @@ trait Base {
   implicit def identLift[T:Rep]: Lift[T,T] = new Lift[T,T] { def lift(x:T) = x }
   implicit def lift[T,U](x:T)(implicit e: Lift[T,U]): U = e.lift(x)
 
+  type Rep[T]
+
+}
+
+trait BaseExp extends Base with Expressions with Blocks with Transforming {
 
   trait Rep[T] {
     type Internal
@@ -27,10 +30,6 @@ trait Base {
     def to(x:T):Exp[Internal]
     def m: Manifest[Internal]
   }
-
-}
-
-trait BaseExp extends Base with Expressions with Blocks with Transforming {
 
   def rep[T:Rep] = implicitly[Rep[T]]
 

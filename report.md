@@ -239,6 +239,8 @@ Delite is a research project from Stanford University's Pervasive Parallelism La
 
 Users are writers of meta-programs using a DSL or even just bare LMS.
 
+![LMS Org](LMS-org.png)
+
 
 # The new frontend
 
@@ -290,6 +292,8 @@ def square[A: Num](x: A) = {
 ~~~
 
 The idea behind the new frontend is to use that typeclass pattern as staging annotation instead of the Rep monad.
+
+![New LMS Org](new-LMS-org.png)
 
 In the previous LMS, we manipulated lifted types Rep[A] and define functions specific function for that Rep[A].
 In the new LMS, we manipulate dsl.A that have Rep typeclass instances defined in scope.
