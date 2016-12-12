@@ -14,16 +14,15 @@ fontsize: 12pt
 
 # Introduction {-}
 
-If programming can be considered as an art, then programming languages are the brush of the artists. The tools are chosen according to individual preferences, and of course the constraints of the desired final work. One of those major constraints is efficiency. Efficiency is less crucial nowadays than it was back when computing power was expensive and scarce, but it is still a very desirable goal. Efficiency can be achieved by writing explicitely and very precisely each step of the program. To enable this, some programming languages are relatively close from the model of the hardware. Those programming languages are called "low-level", because close from the machine and thus distant from the heights of abstraction. But as programs grow more complex, the need for abstraction does too. 
+If programming can be considered as an art, then programming languages are the brush of the artists. The tools are chosen according to individual preferences, but with memory, scaling and performance constraints in mind. One of those major constraints is efficiency. Efficiency is less crucial nowadays than it was back when computing power was expensive and scarce, but it is still a very desirable goal. Efficiency can be achieved by writing explicitly and very precisely each step of the program. To enable this, some programming languages are relatively close from the model of the hardware. Those programming languages are called "low-level", because close from the machine and thus distant from the heights of abstraction. But as programs grow more complex, the need for abstraction does too. 
 
+To raise abstraction power, expressive languages with complex compilers were made. Ironically, the first programming language, lambda-calculus, was the epitome of abstraction and thought of before the first very computer to execute it. Those languages, mostly from the functional programming world, aim the user to express the intent rather than the steps, the "what" rather than the "how". The compilers needed for them are heavy machinery that applies all sort of optimization before translating source code to machine language. The more abstract the language, the more gap there is to fill, and the more compilers have opportunity to optimize. 
 
-To raise abstraction power, expressive languages with complex compilers were made. Ironically, the first programmng language, lambda-calculus, was the epitomy of abstraction and thought of before the first very computer to execute it. Those languages, mostly from the functionnal programming world, aim the user to express the intent than the steps, the what rather than the how. The compilers needed for them are heavy machinery that applies all sort of optimization before translating source code to machine language. The more abstract the language, the more gap there is to fill, and the more compilers have opportunity to optimize. 
-
-Hence, in an ideal world, we can achieve **abstraction without regret**, writing very abstract programs compiled with optimal efficiency for any platform and any hardware. Unfortunately, we are not there yet and expert implementors are still in need. So should we just throw all our efforts into writing the ultimate compiler for the ultimate language ?
+Hence, in an ideal world, we can achieve **abstraction without regret**, writing very abstract programs compiled with optimal efficiency for any platform and any hardware. Unfortunately, we are not there yet and expert implementers are still in need. So should we just throw all our efforts into writing the ultimate compiler for the ultimate language ?
 
 Growing complexity in compiler is not the panacea. In a wide range of programs, compilers are limited by the lack of domain specific knowledge. Indeed, constraining a program to one specific domain open the door for a wide range of specific optimizations. Furthermore, code generation by "macro" is a rather poor way to enable the further abstraction brought by code generation.
 
-One solution to both issue could be to extend the compiler for each domain and having a very powerful macro system. The other one is to write specific domain-specific language in a staged environment. To avoid reinventing the wheel, embedded DSL is a nice compromise between specialized and general-purpose languages. It is this embedded DSL staged meta-programming path that is explored with LMS, a scala library for runtime code generation. In this report, we will explore a new lms implementation that offer a new user frontend, more convenient for the end-user and with multiple benefits enabled by extended typeclass usage. We also cover a case study of lms applied to the domain of computation graphs.
+One solution to both issue could be to extend the compiler for each domain and having a very powerful macro system. The other one is to write specific domain-specific language in a staged environment. To avoid reinventing the wheel, embedded DSL is a nice compromise between specialized and general-purpose languages. It is this embedded DSL staged meta-programming path that is explored with LMS, a Scala library for runtime code generation. In this report, we will explore a new lms implementation that offer a new user frontend, more convenient for the end-user and with multiple benefits enabled by extended typeclass usage. We also cover a case study of lms applied to the domain of computation graphs.
 
 
 
@@ -31,7 +30,7 @@ One solution to both issue could be to extend the compiler for each domain and h
 
 ## Why staging
 
-To see the benefits of a staged-metaprogramming, we will start by an example where it benefits shine: sparse vector multiplication. 
+To see the benefits of a staged meta-programming, we will start by an example where it benefits shine: sparse vector multiplication. 
 
 ~~~scala
 val v1: IndexedSeq
@@ -57,7 +56,7 @@ This work but it is terribly inefficient. What about all those 0 multiplications
 * v1 is known at compile time
 * v1 and v2 are both only known at runtime
 
-In all three cases, staged-metaprogramming is able to generate efficient code that avoid the (1000 [zip]+ 1000 [*]) operations at runtime and reduce it to 10 operations (no more zip) and even 0 operations in the first case!
+In all three cases, staged meta-programming is able to generate efficient code that avoid the (1000 [zip]+ 1000 [*]) operations at runtime and reduce it to 10 operations (no more zip) and even 0 operations in the first case!
 
 How ? Well it is all about available information. We will start with the first case which is the simplest to understand:
 We know at staging time all the data and all the operation that is applied to the data. Instead of waiting for runtime to apply those operations, we can generate a new block that is strictly equivalent. *Note* that to ensure equivalence, we use a fixed seed so that the number generation is deterministic and the current state of the world at execution is not relevant. So the generated code can be reduced to:
@@ -85,7 +84,7 @@ val stagedBlock = {
 ## LMS
 
 
-Lightweight Modular Staging (LMS) is a library written in Scala that enable staged meta-programming. Meta-Programming is the art of writing computer programs that can handle other programs as data. Thus, they are able to reason about programs, which they are themselves, hence the name. In staged meta-programming, the goal is to generate new programs from annotated programs. Those annotations are called staged annotions. The program source is called the **meta-program**. The program being generated is the the **object program**. The generation can go through multiple stage. Each stage is another transformation that can leverage new informations to build the final program. LMS is heterogenous: the meta-program and the object program can be written in different programming languages (eg: generating C). 
+Lightweight Modular Staging (LMS) is a library written in Scala that enable staged meta-programming. Meta-Programming is the art of writing computer programs that can handle other programs as data. Thus, they are able to reason about programs, which they are themselves, hence the name. In staged meta-programming, the goal is to generate new programs from annotated programs. Those annotations are called staged annotations. The program source is called the **meta-program**. The program being generated is the the **object program**. The generation can go through multiple stage. Each stage is another transformation that can leverage new informations to build the final program. LMS is heterogeneous: the meta-program and the object program can be written in different programming languages (e.g: generating C). 
 
 In LMS, the meta-program is written in a subset of Scala. This subset is:
 
@@ -95,7 +94,7 @@ In LMS, the meta-program is written in a subset of Scala. This subset is:
 * lambda-functions and named functions
 * equalities
 
-We will see later what a lifted implementation is but for now let say that any type can be added to LMS as long as we write some appropriate implementation for it. Other projects like scala-native are focused only on LLVM generation  but supports the full scala-language.
+We will see later what a lifted implementation is but for now let say that any type can be added to LMS as long as we write some appropriate implementation for it. Other projects like scala-native are focused only on LLVM generation  but supports the full Scala language.
 
 ## Staging
 
@@ -105,7 +104,7 @@ In meta-programming, the staged annotations can usually take multiple forms:
 * Abstract-Data-Type (Add(Int(2), Int(3)))
 * quasiquotes (Meta-OCaml)
 
-The LMS way is ... neither. It is based on a virtualized extension of Scala, DSL whose operations on lifted types creates an expression tree and deep reuse of the embedding language order. Those combined achieve a transparent and convenient meta-programming environment for the user because it is virtually no different from a non staged program. We will analyze those three components of LMS below.
+The LMS way is ... neither. It is based on a virtualized extension of Scala, DSL whose operations on lifted types creates an expression tree and deep reuse of the embedding language order. Those combined achieve a transparent and convenient meta-programming environment for the user because it is virtually no different from a non staged program. We will analyse those three components of LMS below.
 
 ### Lifted types
 
@@ -129,7 +128,7 @@ val b: LiftedInteger
 val c: LiftedInger a + b
 ~~~
 
-Notice that even though we use the same operator +, we necessary have to redefine it for LiftedInteger. But instead of actually summing integers, this new + operator will build the right Internal Represenation for this object-program operation. 
+Notice that even though we use the same operator +, we necessary have to redefine it for LiftedInteger. But instead of actually summing integers, this new + operator will build the right Internal Representation for this object-program operation. 
 
 ### Internal representation and the Exp tree
 
@@ -147,7 +146,7 @@ trait Def[+T]
 case class TP[+T](sym: Sym[T], rhs: Def[T])
 ~~~
 
-An assignment links a symbol to a definition. A definition is a composite node that represents an operation on other expressions (eg: Minus(e1:Exp[Int], e2:Exp[Int]) extends Def[Int])) and defines the result type. The expression tree in itself is a typed tree made of only two leaves: Constants and Symbols: «Wait, where are the nodes ?». The nodes are in fact the symbols, or more precisely, the composite node Def that the symbol represents (As stated by a TP). Constants are meta-programs values (eg: a meta-program "val a:LiftedInteger = 2" is represented in the IR as this constant expression: Const(2).
+An assignment links a symbol to a definition. A definition is a composite node that represents an operation on other expressions (e.g: Minus(e1:Exp[Int], e2:Exp[Int]) extends Def[Int])) and defines the result type. The expression tree in itself is a typed tree made of only two leaves: Constants and Symbols: «Wait, where are the nodes ?». The nodes are in fact the symbols, or more precisely, the composite node Def that the symbol represents (As stated by a TP). Constants are meta-programs values (e.g: a meta-program "val a:LiftedInteger = 2" is represented in the IR as this constant expression: Const(2).
 
 By using Scala pattern extractors and implicit conversions, we can reconstruct and manipulate this tree as if it was made only of Def and Const which is more natural. 
 
@@ -175,11 +174,11 @@ But can be manipulated as:
 Minus(Add(a, b), Times(a, b))
 ~~~
 
-We will not describe further the IR since this project focus on the frontend. It will be clearer later what separates the backend from the frontend. But a simple informal definition is that the subset of scala that is available to the user to write meta-programs are the frontend. This include the lifted types interface and the building of the IR as a tree mode solely of the Def hybrid nodes. The IR representation as a sea of nodes, the IR manipulation such as transformers and traversals and code generation are the backend.
+We will not describe further the IR since this project focus on the frontend. It will be clearer later what separates the backend from the frontend. But a simple informal definition is that the subset of Scala that is available to the user to write meta-programs are the frontend. This include the lifted types interface and the building of the IR as a tree mode solely of the Def hybrid nodes. The IR representation as a sea of nodes, the IR manipulation such as transformers and traversals and code generation are the backend.
 
 ### Lifted types and DSL operations
 
-The previous frontend of LMS was representing lifted types as wrapped in a Rep monad. `LiftedInteger` would be written as`Rep[Int]`. The idea is that if A is the expected type in the object-program then we manpulate its Rep-resentation. This monad was the staging annotation.
+The previous frontend of LMS was representing lifted types as wrapped in a Rep monad. `LiftedInteger` would be written as`Rep[Int]`. The idea is that if A is the expected type in the object-program then we manipulate its Rep-resentation. This monad was the staging annotation.
 
 The way to define operations on DSL was to define operators in scope that would manipulate the given Rep.
 
@@ -193,16 +192,16 @@ So as long as the corresponding methods or operators were in scope, the user was
 
 ### Lift
 
-The LMS solution to use Literals and other explicitly declared object is to use global conversion methods that know how to convert some present value to staged value. Their role is to convert `A` into `Rep[A]`. Those conversions are implicits and enable to write such declaration `val a: Rep[Int] = 2`. What is really happening is the scala solve the implicit lift conversion and it becomes `val a: Rep[Int] = lift(2)(intLift)` with `intLift` being an instance of `Lift[Int,Rep[Int]]`. The sole purpose of `Lift` instance is to lift values into lifted types.
+The LMS solution to use Literals and other explicitly declared object is to use global conversion methods that know how to convert some present value to staged value. Their role is to convert `A` into `Rep[A]`. Those conversions are implicit and enable to write such declaration `val a: Rep[Int] = 2`. What is really happening is the Scala solve the implicit lift conversion and it becomes `val a: Rep[Int] = lift(2)(intLift)` with `intLift` being an instance of `Lift[Int,Rep[Int]]`. The sole purpose of `Lift` instance is to lift values into lifted types.
 
 ## Scala virtualization
 
 In order to enable the if-then-else/loops and other control, we use a modified version of the Scala language: scala-virtualized. Scala-virtualized enable to overload the controls as common functions: 
-eg: 'if (t1) t1 else t2 becomes'  '__ifThenElse(t1, t2, t3)'. We can use this overloading to extend the controls to lifted type.
+e.g: 'if (t1) t1 else t2 becomes'  '__ifThenElse(t1, t2, t3)'. We can use this overloading to extend the controls to lifted type.
 
 ## Smart constructors
 
-Smart constructors are optimised constructors of composite def that can apply optimisations based solely on the argumen of the constructor. For instance, for the constructor of IntTimes which represents multiplication of integer we can potentially apply some early reductions.
+Smart constructors are optimised constructors of composite def that can apply optimisations based solely on the arguments of the constructor. For instance, for the constructor of IntTimes which represents multiplication of integer we can potentially apply some early reductions.
 
 ~~~scala
   override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int])
@@ -232,15 +231,15 @@ val c: Rep[Int] = 2 + 3
 val d: Rep[Int] = c + 4 
 ~~~
 
-Contrary to plain Scala, `a`, `b`, `c`, `d` here are not «simple» values. They are each a representation of a tree of `Exp`. `a` and `b` are trivial trees of one node: A constant leaf. However, `c` and `d` start to becomes more complex. The actual content of each tree depend of the evaluation order of the frontend operations by Scala. At code generation, the tree order is conserved through let bindings. Nevertheless, between the tree construction and code generation, some transformation might have changed the tree. Common Subexpression Elimination, Code motion, Loop Unrolling, Dead Code Elimination, Loop Fusion and more are among such potential transformations. Transformations are written in LMS as subtype of `Transformer`.
+Contrary to plain Scala, `a`, `b`, `c`, `d` here are not "simple" values. They are each a representation of a tree of `Exp`. `a` and `b` are trivial trees of one node: A constant leaf. However, `c` and `d` start to becomes more complex. The actual content of each tree depend of the evaluation order of the frontend operations by Scala. At code generation, the tree order is conserved through let bindings. Nevertheless, between the tree construction and code generation, some transformation might have changed the tree. Common Subexpression Elimination, Code motion, Loop Unrolling, Dead Code Elimination, Loop Fusion and more are among such potential transformations. Transformations are written in LMS as subtype of `Transformer`.
 
 ## DSL as libraries
 
-LMS enables meta-programming and doesn't necessarily require the use of DSL. Nevertheless, a powerful way to use LMS is to provide DSL written on top of LMS that includes all the necessary lifted types and `Transformer` to build application from. The `common/` part of LMS are a regroupment of lifted types and `Transformer` that should be needed in most cases. It includes, if-then-else, primitive types, and useful transformers such as CSE and code motion. On top of that, libraries author can add their own lifted types and transformer to provide a new « flavor » of LMS that form a DSL.
+LMS enables meta-programming and doesn't necessarily require the use of DSL. Nevertheless, a powerful way to use LMS is to provide DSL written on top of LMS that includes all the necessary lifted types and `Transformer` to build application from. The `common/` part of LMS are a provided batterie of lifted types and `Transformer` that should be needed in most cases. It includes, if-then-else, primitive types, and useful transformers such as CSE and code motion. On top of that, libraries author can add their own lifted types and transformer to provide a new « flavour » of LMS that form a DSL.
 
 ## Delite
 
-Delite is a research project from Stanford University's Pervasive Parallelism Laboratory (PPL). Delite is built on top of LMS and could be seen as an alternative of `common/` targeted for high-performance parrallel DSL.
+Delite is a research project from Stanford University's Pervasive Parallelism Laboratory (PPL). Delite is built on top of LMS and could be seen as an alternative of `common/` targeted for high-performance parallel DSL.
 
 ## User
 
@@ -318,7 +317,7 @@ def ifThenElse[A: Rep](a: dsl.Boolean, b: A, c: A): A
 
 ## Type shadowing
 
-The convenient benefit of using dsl.A is that once the dsl is imported, we can shadow the type A by dsl.A. For instance, dsl.Int shadows scala.Int. This is specially useful to write meta-programs for which the lifted type of A, dsl.A, is the most common meaning of the type A.
+The convenient benefit of using dsl.A is that once the dsl is imported, we can shadow the type A by dsl.A. For instance, dsl.Int shadows scala.Int. This is especially useful to write meta-programs for which the lifted type of A, dsl.A, is the most common meaning of the type A.
 
 ## Typeclass overloading
 
@@ -334,7 +333,7 @@ In the previous LMS, equals could be defined in such way:
 	
 ~~~
 
-The scala choosed the right dispatch based on the most specialized definition of __equal. Note that `def __equal[A, B](a: A, b:B)` is a more general function than all above but only get triggered if none of the above case do not trigger.
+The Scala choose the right dispatch based on the most specialized definition of __equal. Note that `def __equal[A, B](a: A, b:B)` is a more general function than all above but only get triggered if none of the above case do not trigger.
 
 Now with the typeclass pattern we could attempt such rewrite:
 
@@ -347,7 +346,7 @@ Now with the typeclass pattern we could attempt such rewrite:
 	
 ~~~
 
-The issue is that context bound are only syntaxic sugar and those functions are eventually desugared into: 
+The issue is that context bound are only syntactic sugar and those functions are eventually desugared into: 
 
 ~~~scala
 
@@ -363,7 +362,7 @@ The issue is that in this curried form, none of the first three definitions of _
 
 ## Primitives types and collections
 
-The new LMS frontend required to adapt the whole `internal/` to the new typeclass pattern but it also required to write primitive types and collections in a modified manner. We implementend the primitive types: Int, Float, Double, Long as well as String, Boolean and the collections Array, Matrix and List. We also implemented staged lambda functions, staged named functions, staged if-then-else blocks.
+The new LMS frontend required to adapt the whole `internal/` to the new typeclass pattern but it also required to write primitive types and collections in a modified manner. We implemented the primitive types: Int, Float, Double, Long as well as String, Boolean and the collections Array, Matrix and List. We also implemented staged lambda functions, staged named functions, staged if-then-else blocks.
 
 Lifted types are organized into three or more traits:
 
@@ -381,7 +380,7 @@ Computation graphs are directed graph made of nodes that represent a computation
 
 Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inputs is the special case of Input nodes and having 0 output is the special case of output nodes. The input nodes form the input layer. The output nodes form the output layer. We will only consider feedforward computation graphs without any cycles. An example of a node can be the Add node. It takes two entry and output their sum.
 
-The benefits of staging for Computation Graph is that there it would be advantageous to separate the construction of the graph and the execution of computation on this graph. Indeed, it is possible to check some properties on the computation graph that ensure that the graph has proper form. Furthermore, it is possible to apply transformation to the graph such as computing the gradient of the function represented by the graph. Last but not least, computation graph are abstractions that are convenient to build, conceptualize and handle but not very efficient because of the level of abstraction. Fortunately, after staging unecessary indirections are removed and the whole function is linearized into the bare required operations.
+The benefits of staging for Computation Graph is that there it would be advantageous to separate the construction of the graph and the execution of computation on this graph. Indeed, it is possible to check some properties on the computation graph that ensure that the graph has proper form. Furthermore, it is possible to apply transformation to the graph such as computing the gradient of the function represented by the graph. Last but not least, computation graph are abstractions that are convenient to build, conceptualize and handle but not very efficient because of the level of abstraction. Fortunately, after staging unnecessary indirections are removed and the whole function is linearised into the bare required operations.
 
 
 ~~~scala
@@ -416,9 +415,6 @@ trait Graphs {
 
 trait DerivableGraphs extends Graphs {
 
-  def zero: Data
-  def one: Data
-
   type Data <: AddTimeAble[Data]
   type Derivatives = List[Data]
   type N = DerivableNode
@@ -431,14 +427,16 @@ trait DerivableGraphs extends Graphs {
 
 One of the clear benefits of using types as staged annotations is the ability to share codes between non staged programs and meta-programs. Indeed, the graph can set the type of data it manipulates as an abstract type member. Then depending on the type of graph and the type of nodes the graph may contain, this type can be upper bounded by the appropriate interface. 
 
-Below the common forward evaluation of the graph implemented using memoization and recusion:
+Below the common forward evaluation of the graph implemented using memoization and recursion:
+
 
 ~~~scala
     def forward(input: IndexedSeq[Data], dbg:Boolean = false) = {
 
       //init datas with provided input as input Node
       var datas: Map[String, Data] =
-        input.zipWithIndex map { case (data, ind) => ("IN"+(ind+1), data) } toMap
+        input.zipWithIndex 
+			map { case (data, ind) => ("IN"+(ind+1), data) } toMap
 
       def output(s: String): Data = {
         val (n, inp) = nodes(s)
@@ -468,17 +466,17 @@ A staged computation graph builds the graph during staging. This means that all 
 
 ## Arithmetic
 
-We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that the one of Int, Double and Float implement. Those kind of computation graph are a good sanity check as well as a clear example of a compuation graph. We will use them to do benchmarking of their evaluation time perfomance as a staged meta-program and as a normal program. We do not take into account the time the efficiency of building those graphs and do the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Node that represent some fixed weights inside the graph.
+We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that the one of Int, Double and Float implement. Those kind of computation graph are a good sanity check as well as a clear example of a computation graph. We will use them to do benchmarking of their evaluation time performance as a staged meta-program and as a normal program. We do not take into account the time the efficiency of building those graphs and do the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Node that represent some fixed weights inside the graph.
 
 ### Benchmark
 
 For benchmarking purposes, we will randomly generate 2000 nodes big graph. The graph are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
 
-We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implemenation of Int. The optimisd implementation of Int differs from the non optimised optimisation of Int by the usage smart-constructors that can optimize some operation such as multiplication with 0 or 1, or addition with 0 or binary operation on constants. 
+We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implementation of Int. The optimised implementation of Int differs from the non optimised optimisation of Int by the usage smart-constructors that can optimize some operation such as multiplication with 0 or 1, or addition with 0 or binary operation on constants. 
 
-We build 100 different graph and average the evaluation time to achieve meaninful results. Benchmarks are run on a thinkpad t440s:
+We build 100 different graph and average the evaluation time to achieve meaningful results. Benchmarks are run on a thinkpad t440s:
 
-Average evalation time: 
+Average evaluation time: 
 
 * non-staged program: 2156 microseconds
 * staged program: 171 microseconds.
@@ -486,17 +484,18 @@ Average evalation time:
 ![Performance chart](perf.png){ width="80%" }
 
 
-## DerivableGraph
+## Derivable Graphs
 
 We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph. our backpropagation algorithm is common for both environment. This shows the flexibility of LMS.
 
-## MatrixGraph
+## Matrix Graphs
 
 Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging.
 
 
 # Conclusion {-}
 
+LMS is a powerful meta-programming libraries that can enable the writing of meta-programs in a very lightweight manner. A wide range of optimisations can be unlocked to users with the usage of LMS as a DSL toolbox for DSL library authors. Abstraction can be kept without sacrificing performance. Our case study of LMS applied to computation graphs is a good showcase of that result. Eventually, meta-programs might shape a large part of high-performance computing. By enhancing the tools and make it more lightweight to the user, we hope to see the usage of LMS democratize to a wider range of applications.
 
 # References {-}
 

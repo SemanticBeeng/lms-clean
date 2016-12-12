@@ -1,0 +1,74 @@
+# markdown-spellcheck spelling configuration file
+# Format - lines beginning # are comments
+# global dictionary is at the start, file overrides afterwards
+# one word per line, to define a file override use ' - filename'
+# where filename is relative to this configuration file
+lms
+frontend
+typeclass
+Int
+scala-native
+LLVM
+quasiquotes
+Meta-OCaml
+virtualized
+LiftedInteger
+virtualization
+scala-virtualized
+delite
+ppl
+subtyping
+desugared
+TensorFlow
+Deeplearning4j
+ - report.md
+0
+3
+v1
+v2
+1000
+10
+TODO
+2
+e1
+e2
+TP
+val
+Const
+backend
+Rep-resentation
+t1
+t2
+_
+_ifThenElse
+t3
+IntTimes
+Subexpression
+dsl.A
+dsl
+dsl.A.
+dsl.Int
+scala.Int.
+_equal
+AsExp
+BaseExp
+AsImpl
+AsOptImpl
+70
+1
+feedforward
+memoization
+AddTimeAble
+100
+thinkpad
+t440s
+2156
+171
+80
+backpropagation
+Tiark's
+Amin
+Odersky
+Tiark
+Rompf
+Koeplinger
