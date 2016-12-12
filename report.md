@@ -109,9 +109,9 @@ The LMS way is ... neither. It is based on a virtualized extension of Scala, DSL
 
 ### Lifted types
 
-A lifted type represents that same type at a future stage. For instance, the lifted type of an integer is a declaration that once staged, this same value will represent an integer. So instead of manipulating an integer directly, you manipulate an "integer once staged".
+A lifted type represents that same type at a future stage. For instance, the lifted type of an integer is a declaration that, once staged, this same value will represent an integer. So instead of manipulating an integer directly, you manipulate an "integer once staged".
 
-Although similar those programs are different:
+Although similar in form those programs are different in nature:
 
 This one is a standard program stating that a, b are integers and that c is their sum.
 
@@ -205,7 +205,8 @@ eg: 'if (t1) t1 else t2 becomes'  '__ifThenElse(t1, t2, t3)'. We can use this ov
 Smart constructors are optimised constructors of composite def that can apply optimisations based solely on the argumen of the constructor. For instance, for the constructor of IntTimes which represents multiplication of integer we can potentially apply some early reductions.
 
 ~~~scala
-  override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int]): Exp[scala.Int] = (e1, e2) match {
+  override def int_times(e1: Exp[scala.Int], e2: Exp[scala.Int])
+  : Exp[scala.Int] = (e1, e2) match {
     case (Const(0), r) => Const(0)
     case (l, Const(0)) => Const(0)
     case (Const(1), r) => r
@@ -224,11 +225,14 @@ For instance:
 ~~~scala
 val a: Rep[Int] = 2 //Const(2)
 val b: Rep[Int] = 3 //Const(3)
-val c: Rep[Int] = 2 + 3 //IntAdd(Const(2), Const(3))
-val d: Rep[Int] = c + 4 //IntAdd(IntAdd(Const(2), Const(3)), Const(4))
+
+//IntAdd(Const(2), Const(3))
+val c: Rep[Int] = 2 + 3 
+//IntAdd(IntAdd(Const(2), Const(3)), Const(4))
+val d: Rep[Int] = c + 4 
 ~~~
 
-Contrary to plain Scala, `a`, `b`, `c`, `d` here are not "simple" value. They are each a representation of a tree of expression. `a` and `b` are trivial trees of one node: A constant leaf. However, `c` and `d` start to becomes more complex. The actual content of each tree depend of the evaluation order of the frontend operations by Scala. At code generation, the tree order is conserved through let bindings. Nevertheless, between the tree construction and code generation, some transformation might have changed the tree. Common Subexpression Elimination, Code motion, Loop Unrolling, Dead Code Elimination, Loop Fusion and more are among such potential transformations. Transformations are written in LMS as subtype of `Transformer`.
+Contrary to plain Scala, `a`, `b`, `c`, `d` here are not «simple» values. They are each a representation of a tree of `Exp`. `a` and `b` are trivial trees of one node: A constant leaf. However, `c` and `d` start to becomes more complex. The actual content of each tree depend of the evaluation order of the frontend operations by Scala. At code generation, the tree order is conserved through let bindings. Nevertheless, between the tree construction and code generation, some transformation might have changed the tree. Common Subexpression Elimination, Code motion, Loop Unrolling, Dead Code Elimination, Loop Fusion and more are among such potential transformations. Transformations are written in LMS as subtype of `Transformer`.
 
 ## DSL as libraries
 
@@ -347,7 +351,8 @@ The issue is that context bound are only syntaxic sugar and those functions are 
 
 ~~~scala
 
-	def __equal[A, B](a: A, b:B)(implicit repA: Rep[A], implicit repB: Rep[B]): Boolean
+	def __equal[A, B](a: A, b:B)
+	(implicit repA: Rep[A], implicit repB: Rep[B]): Boolean
 	def __equal[A, B](a: A, b:B)(implicit repA: Rep[A]): Boolean
 	def __equal[A, B](a: A, b:B)(implicit repB: Rep[B]): Boolean
 	def __equal[A, B](a: A, b:B): scala.Boolean
@@ -378,7 +383,6 @@ Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inpu
 
 The benefits of staging for Computation Graph is that there it would be advantageous to separate the construction of the graph and the execution of computation on this graph. Indeed, it is possible to check some properties on the computation graph that ensure that the graph has proper form. Furthermore, it is possible to apply transformation to the graph such as computing the gradient of the function represented by the graph. Last but not least, computation graph are abstractions that are convenient to build, conceptualize and handle but not very efficient because of the level of abstraction. Fortunately, after staging unecessary indirections are removed and the whole function is linearized into the bare required operations.
 
-One of the clear benefits of using types as staged annotations is the ability to share codes between non staged programs and meta-programs. Indeed, the graph can set the type of data it manipulates as an abstract type member. Then depending on the type of graph and the type of nodes the graph may contain, this type can be upper bounded by the appropriate interface. 
 
 ~~~scala
 trait Graphs {
@@ -425,6 +429,35 @@ trait DerivableGraphs extends Graphs {
 
 ~~~
 
+One of the clear benefits of using types as staged annotations is the ability to share codes between non staged programs and meta-programs. Indeed, the graph can set the type of data it manipulates as an abstract type member. Then depending on the type of graph and the type of nodes the graph may contain, this type can be upper bounded by the appropriate interface. 
+
+Below the common forward evaluation of the graph implemented using memoization and recusion:
+
+~~~scala
+    def forward(input: IndexedSeq[Data], dbg:Boolean = false) = {
+
+      //init datas with provided input as input Node
+      var datas: Map[String, Data] =
+        input.zipWithIndex map { case (data, ind) => ("IN"+(ind+1), data) } toMap
+
+      def output(s: String): Data = {
+        val (n, inp) = nodes(s)
+        if (datas.contains(s)) 
+          datas(s)
+        else {
+          val l = inp.map(output)
+          val r = n.output(l)
+          datas += ((s, r))
+          r
+        }
+      }
+
+      output("OUT")
+
+    }
+
+~~~
+
 `AddTimeAble[Data]` guarantees that Data has the operations `+` and `*` necessary for derivations.
 
 Here Data can either be either `dsl.Int` for a staged computation graph or else a simple `scala.Int` (or at least a wrapper that implements AddTimeAble)
@@ -459,7 +492,7 @@ We also implement backpropagation in both meta-programs and common programs. Bac
 
 ## MatrixGraph
 
-Last but not least, we implement computation graph able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging.
+Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging.
 
 
 # Conclusion {-}
