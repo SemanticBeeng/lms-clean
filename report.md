@@ -484,11 +484,13 @@ Average evaluation time:
 
 ## Derivable Graphs
 
-We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph. our backpropagation algorithm is common for both environment. This shows the flexibility of LMS.
+We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph with respect to the weights or in our case to the input nodes. Our backpropagation algorithm is common for both staged and non-staged types. This shows the flexibility of LMS.
+
+![Example of a simple arithmethic computation graph](tree-backprop.png){ width="70%" }
 
 ## Matrix Graphs
 
-Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging.
+Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. For instance, the multiplication node is valid only if its input are of size `AxB` and `BxC`. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging. The input nodes dimensions must be given and the other dimensions are automatically infered. If no dimensions fit the constraints, an exception is thrown during staging.
 
 
 # Conclusion {-}
