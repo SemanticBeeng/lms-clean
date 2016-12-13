@@ -47,7 +47,7 @@ This work but it is terribly inefficient. What about all those 0 multiplications
 In the two first case, staged meta-programming is able to generate efficient code that avoid the (N [zip] + N [*]) operations at runtime and reduce it to K operations (no more zip) and even 0 operations in the first case!
 
 How ? Well it is all about available information. We will start with the first case which is the simplest to understand:
-We know at staging time all the data and all the operations that are applied to the data. Instead of waiting for runtime to apply those operations, we can generate a new block that is strictly equivalent. We use the simple optimisation `0*a = 0`, `0+a=a`, `(A) + (B) = (A+B)`, `(A) * (B) = (A*B)`. `()` surrounds integers whose value are known during staing.
+We know at staging time all the data and all the operations that are applied to the data. Instead of waiting for runtime to apply those operations, we can generate a new block that is strictly equivalent. We use the simple optimisation `0*a = 0`, `0+a=a`, `(A) + (B) = (A+B)`, `(A) * (B) = (A*B)`. `()` surrounds integers whose values are known during staing.
 
 The generated code in the first can be reduced to:
 
@@ -56,7 +56,7 @@ val x0 = C
 x0
 ~~~
 
-where C is a constant which value depend on v1 and. 
+where C is a constant which value depend on v1 and v2. 
 During staging, the expression corresponding to x0 is reduced from a large tree of 
 `[(D) * (E)] + ... + [(F) * (G)] = (I) + ... + (J) = (C)`
 
@@ -470,7 +470,7 @@ We implement a graph with each node being a basic arithmetic operation (+,*,-,%,
 
 For benchmarking purposes, we will randomly generate 2000 nodes big graph. The graph are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
 
-We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implementation of Int. The optimised implementation of Int differs from the non optimised optimisation of Int by the usage smart-constructors that can optimize some operation such as multiplication with 0 or 1, or addition with 0 or binary operation on constants. 
+We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implementation of Int. The optimised implementation of Int differs from the non optimised optimisation of Int by smart-constructors that can optimize some operations such as multiplication with 0 or 1, or addition with 0 or binary operations on constants. 
 
 We build 100 different graph and average the evaluation time to achieve meaningful results. Benchmarks are run on a thinkpad t440s:
 
