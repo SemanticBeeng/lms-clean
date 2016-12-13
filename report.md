@@ -28,9 +28,14 @@ One solution to both issue could be to extend the compiler for each domain and h
 
 # LMS
 
+Lightweight Modular Staging (LMS) is a framework for runtime code generation. It has two main overlapping uses:
+
+* As a Meta-Programming framework for writing staging compilers. A staging compiler can generate object programs from user meta-programs written in a subset of Scala enriched with DSL. An example of such meta-programs can be staged interpreters. As we will see later, staged interpreters are compilers themselves.
+* As a Transpiler framework for writing optimised transpilers from programs written in a subset of Scala enriched with DSL. We will see that this case applies when the user programs are intended to use lifted types in lieu of common types. By "transpiler", we mean that compared to a compiler, the generated output is a valid source code in a given programming language. It is optimized in the sense that the written transpiler does not only translate code from one language to another but will also be capable to applies some transformation to the internal representation of the user program before generating the output. Among those transformations, we can apply the usual compiler optimisations. We can also apply some more domain specific transformations if needed. This enable to use Scala as an abstract unified source language to generate programs that use as intermediary step various other languages and target heterogenous hardware. This is  the case of the framework Delite, written on top of LMS.
+
 ## Why staging
 
-To see the benefits of a staged meta-programming, we will start by an example where its benefits shine clearly: sparse vector multiplication. 
+To see the benefits of a staged meta-program, we will start by an example where its benefits shine clearly: sparse vector multiplication. 
 
 Assume that v1 and v2 are sparse vector of size N with K cells containing Integers: N >> K.
 ~~~scala
