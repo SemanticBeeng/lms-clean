@@ -523,11 +523,11 @@ The new frontend enables an elegant signature for lifted functions which have se
   implicit def lambdaRep[A:Rep, B:Rep]: Rep[Lambda[A,B]]
 ~~~
 
-As we can see, from the function whose type is `A => B`, the lifted function  is a subtype of `A => B`.
+As we can see, from the function whose type is `A => B`, the lifted function is also a subtype of `A => B`.
 
-The way this is implemented is that when a function is applied, the representation of the function is lazily generated for all the following calls.
+The way this is implemented is that when a function is applied for the first time, a representation of a named function is lazily generated and this application and all the futures ones are applied to this new named function.
 
-It is not necessary to lift a function and in most case, a simple inlining of the function body is enough which is what happen if the function is not lifted. Using an implicit `implicit def fun` enables the automatic lifting of functions when needed but this might need to be removed in the future if the behavior is too unpredictible (since both the lifted and non-lifted type are subtype of `A => B`. Since lifted functions have `Rep` typeclass instances, they can be handled as "first class members" of other controls like if-then-else.
+It is not necessary to lift a function and in most case, a simple inlining of the function body is enough which is what happen if the function is not lifted. Using an `implicit def fun` enables the automatic lifting of functions when needed ,but this might need to be removed in the future if the behavior reveals to be too unpredictable (since both the lifted and non-lifted type are subtype of `A => B`. Since lifted functions have `Rep` typeclass instances, they can be handled as "first class members" of other controls like if-then-else (and used as parameters and return type of all lifted controls).
 
 # Computation Graph
 
