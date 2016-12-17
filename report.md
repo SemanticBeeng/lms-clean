@@ -73,6 +73,8 @@ where `C` is a constant which value depend on `v1` and `v2`.
 During staging, the expression corresponding to x0 is reduced from a large tree of 
 `[(D) * (E)] + ... + [(F) * (G)] = (I) + ... + (J) = (C)`
 
+It is commonly called "constant folding".
+
 In the second case, let us assume that `i1, i2, ..., i10` are the index of the non-zero value of v1. The code can be generated to this reduced form:
 
 ~~~scala
@@ -622,13 +624,13 @@ A staged computation graph builds the graph during staging. This means that all 
 
 ## Arithmetic
 
-We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that the one of Int, Double and Float implement. Those kind of computation graph are a good sanity check as well as a clear example of a computation graph. We will use them to do benchmarking of their evaluation time performance as a staged meta-program and as a normal program. We do not take into account the time the efficiency of building those graphs and do the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Node that represent some fixed weights inside the graph.
+We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that Int, Double and Float implement it. Those kinds of computation graph are a good sanity check as well as a clear example of the abstraction brought by a computation graph. We will use those arithmetic graphs to do benchmarking of their evaluation time performance as a staged meta-program and as a normal progra. We do not take into account the efficiency of building those graphs and of the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Nodes that represent some fixed weights inside the graph such that some constant folding might happen. Those constant nodes are a decent way to represent fixed weights in a graph.
 
 ### Benchmark
 
 For benchmarking purposes, we will randomly generate 2000 nodes big graph. The graph are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
 
-We compare the non-staged computation graph to a meta-program that doesn't benefit from the optimised implementation of Int. The optimised implementation of Int differs from the non optimised optimisation of Int by smart-constructors that can optimize some operations such as multiplication with 0 or 1, or addition with 0 or binary operations on constants. 
+We compare the non-staged computation graph to a meta-program that benefits from the optimised implementation of lifted Int. The optimised implementation of lifted Int differs from the non optimised optimisation of lift Int by smart-constructors that can optimize some operations such as multiplications with 0 or 1, or addition with 0 or binary operations on constants (Constant folding). 
 
 We build 100 different graph and average the evaluation time to achieve meaningful results. Benchmarks are run on a thinkpad t440s:
 
@@ -642,19 +644,19 @@ Average evaluation time:
 
 ## Derivable Graphs
 
-We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph with respect to the weights or in our case to the input nodes. Our backpropagation algorithm is common for both staged and non-staged types. This shows the flexibility of LMS.
+We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph with respect to the weights or in our case to the input nodes. Our backpropagation algorithm is common for both lifted and non-lifted types thanks to a `AddTimeAble` interface (derivability need at least `+` and `*` to be defined). This shows the flexibility of LMS.
 
-![Example of a simple arithmethic computation graph](tree-backprop.png){ width="70%" }
+![Example of a simple arithmethic computation graph with backpropagation](tree-backprop.png){ width="70%" }
 
 ## Matrix Graphs
 
-Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can achieve is to check the correct dimensions of the matrix between nodes. For instance, the multiplication node is valid only if its input are of size `AxB` and `BxC`. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions during staging. The input nodes dimensions must be given and the other dimensions are automatically infered. If no dimensions fit the constraints, an exception is thrown during staging.
+Last but not least, we implement computation graphs able to handle Matrix as Data. Matrix as data is common in computation graph of neural networks and machine learning models. One interesting feature that we can have is to check the correct dimensions of the matrix between nodes during staging. For instance, the multiplication node is valid only if its input are of size `AxB` and `BxC`. This can be problematic if only checked at runtime but fortunately, in a staged environment we can check the appropriate dimensions at a safer time. The input nodes dimensions must be given (as a composite lifted type) and the other dimensions are automatically infered. If no dimensions fit the constraints, an exception is thrown during staging.
 
 
 # Conclusion {-}
 
 
-LMS is a powerful meta-programming library that unlocks a  wide range of possibilities and among them abstraction without regret. Our case study of LMS applied to computation graphs is a good showcase of the performance benefits of that approach while keeping a high degree of abstraction. Eventually, meta-programs might shape a large part of high-performance computing. By enhancing the tools and making the syntax seamless to the user, we hope to see the usage of LMS democratize to a wider range of applications.
+LMS is a powerful meta-programming library that unlocks a wide range of possibilities and among them **abstraction without regret**. Our case study of LMS applied to computation graphs is a good showcase of the performance benefits of that approach while keeping a high degree of abstraction. Eventually, meta-programs might shape a large part of high-performance computing. By enhancing the tools and making the syntax seamless to the user, we hope to see the usage of LMS democratize to a wider range of applications.
 
 # References {-}
 
