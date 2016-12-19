@@ -19,8 +19,9 @@ trait Functions extends Base {
 
 trait FunctionsExp extends Functions with EffectExp {
 
-  case class LambdaDef[A, B](f: Exp[A] => Exp[B], x:Exp[A], b:Block[B]) extends Def[A => B]
+  case class LambdaDef[A, B](x:Exp[A], b:Block[B]) extends Def[A => B]
   case class Apply[A,B](b:Exp[A => B], x:Exp[A]) extends Def[B]
+  
   case class Lambda[A:Rep, B:Rep](f: A => B) extends (A => B) {
 
     val rA:Rep[A] = rep[A]
@@ -68,7 +69,7 @@ trait FunctionsExp extends Functions with EffectExp {
     val fA = fun.compose((x:Exp[rA.Internal]) => rA.from(x))
     val fB: Exp[rA.Internal] => Exp[rB.Internal] = fA.andThen((x:B) => rB.to(x))
     val b: Block[rB.Internal] = reifyEffects(fB(x))
-    toAtom(LambdaDef(fB, x, b))
+    toAtom(LambdaDef(x, b))
   }
 
   def unboxedFresh[A:Manifest] : Exp[A] = fresh[A]
@@ -78,18 +79,18 @@ trait FunctionsExp extends Functions with EffectExp {
 
 
   override def mirror[A:Manifest](e: Def[A], f: Transformer)(implicit pos: SourceContext): Exp[A] = (e match {
-    case e@LambdaDef(g, x:Exp[Any],y:Block[b]) => toAtom(LambdaDef(f(g), f(x), f(y)))(mtype(manifest[A]),pos)
+    case e@LambdaDef(x:Exp[Any],y:Block[b]) => toAtom(LambdaDef(f(x), f(y)))(mtype(manifest[A]),pos)
 //    case Reflect(e@Apply(g,arg), u, es) => reflectMirrored(Reflect(Apply(f(g),f(arg))(e.mA,mtype(e.mB)), mapOver(f,u), f(es)))(mtype(manifest[A]), pos)
     case _ => super.mirror(e,f)
   }).asInstanceOf[Exp[A]] // why??
 
   override def syms(e: Any): List[Sym[Any]] = e match {
-    case LambdaDef(_, x, y) => syms(y)
+    case LambdaDef(x, y) => syms(y)
     case _ => super.syms(e)
   }
 
   override def boundSyms(e: Any): List[Sym[Any]] = e match {
-    case LambdaDef(_, x, y) => syms(x) ::: effectSyms(y)
+    case LambdaDef(x, y) => syms(x) ::: effectSyms(y)
     case _ => super.boundSyms(e)
   }
 
@@ -105,7 +106,7 @@ trait FunctionsExp extends Functions with EffectExp {
 */
 
   override def symsFreq(e: Any): List[(Sym[Any], Double)] = e match {
-    case LambdaDef(_, _, y) => freqHot(y)    
+    case LambdaDef(_, y) => freqHot(y)    
     case _ => super.symsFreq(e)
   }
 
@@ -119,7 +120,7 @@ trait ScalaGenFunctions extends ScalaGenNested {
 
   override def emitNode(sym: Sym[Any], rhs: Def[Any]) = rhs match {
 
-    case e@LambdaDef(fun, x, y) =>
+    case e@LambdaDef(x, y) =>
       emitValDef(sym, "{" + quote(x) + ": (" + remap(x.tp) + ") => ")
       emitBlock(y)
       stream.println(quote(getBlockResult(y)) + ": " + remap(y.tp))

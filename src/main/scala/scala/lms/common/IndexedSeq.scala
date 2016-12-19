@@ -5,7 +5,7 @@ import scala.lms.internal.{GenericNestedCodegen, GenericFatCodegen, GenerationFa
 
 
 trait IndexedSeqs extends Base {
-  this: Ints with Units =>
+  this: Ints with Units with Functions with Booleans =>
 
   type IndexedSeq[T] <: IndexedSeqOps[T]
 
@@ -20,6 +20,8 @@ trait IndexedSeqs extends Base {
     def length: Int
     def apply(x: Int): T
     def toScalaIndexedSeq(size: scala.Int): scala.IndexedSeq[T]
+    def sumIf(x: Lambda[T,Boolean]): Int
+
   }
   
 
@@ -28,12 +30,13 @@ trait IndexedSeqs extends Base {
 
 
 trait IndexedSeqsExp extends BaseExp with IndexedSeqs {
-  this: IntsExp with UnitsExp =>
+  this: IntsExp with UnitsExp with FunctionsExp with Booleans=>
 
 
   case class IndexedSeqLength[T](e1: Exp[scala.IndexedSeq[T]]) extends Def[scala.Int]
   case class IndexedSeqNew[T](e: Exp[T]*) extends Def[scala.IndexedSeq[T]]
   case class IndexedSeqApply[T](e1: Exp[scala.IndexedSeq[T]], e2: Exp[scala.Int]) extends Def[T]
+  case class IndexedSeqSumIf[T](e1: Exp[scala.IndexedSeq[T]], e2: Exp[T => scala.Boolean]) extends Def[scala.Int]
 
   case class IndexedSeq[T:Rep](e: Exp[scala.IndexedSeq[Any]]) extends IndexedSeqOps[T] with Expressable[scala.IndexedSeq[Any]] {
     val tp = rep[T]
@@ -45,6 +48,12 @@ trait IndexedSeqsExp extends BaseExp with IndexedSeqs {
     def length = int(indexedSeq_length(e))
     def apply(x: Int) = tp.from(indexedSeq_apply(typedE, x.e))
     def toScalaIndexedSeq(size: scala.Int) = (0 until size).map(x => apply(int(x))).toIndexedSeq
+
+    def sumIf(x: Lambda[T,Boolean]): Int = {
+      val lambda: Exp[tp.Internal => scala.Boolean] = x.lambda.asInstanceOf[Exp[tp.Internal => scala.Boolean]]
+      int(indexedSeq_sumIf(typedE, lambda)(mf))
+    }
+
   }
 
 
@@ -70,23 +79,39 @@ trait IndexedSeqsExp extends BaseExp with IndexedSeqs {
     indexedSeq[T](l.asInstanceOf[Exp[scala.IndexedSeq[Any]]])
   }
 
+  def indexedSeq_sumIf[T:Manifest](e1: Exp[scala.IndexedSeq[T]], e2: Exp[T => scala.Boolean]): Exp[scala.Int]
   def indexedSeq_apply[T:Manifest](e1: Exp[scala.IndexedSeq[T]], e2: Exp[scala.Int]): Exp[T]
   def indexedSeq_length[T](e1: Exp[scala.IndexedSeq[T]]): Exp[scala.Int]
   
 }
 
 trait IndexedSeqsImpl extends IndexedSeqsExp  {
-  this: IntsExp with UnitsExp =>
+  this: IntsExp with UnitsExp with FunctionsExp with Booleans =>
 
   def indexedSeq_apply[T:Manifest](e1: Exp[scala.IndexedSeq[T]], e2: Exp[scala.Int]) = IndexedSeqApply[T](e1, e2)
-  def indexedSeq_length[T](e1: Exp[scala.IndexedSeq[T]]) = IndexedSeqLength(e1)    
+  def indexedSeq_length[T](e1: Exp[scala.IndexedSeq[T]]) = IndexedSeqLength(e1)
+  def indexedSeq_sumIf[T:Manifest](e1: Exp[scala.IndexedSeq[T]], e2: Exp[T => scala.Boolean]): Exp[scala.Int] = IndexedSeqSumIf[T](e1, e2)  
 
 }
 
 
 trait IndexedSeqsOptImpl extends IndexedSeqsImpl with EffectExp{
-  this: IntsExp with UnitsExp =>
+  this: IntsExp with UnitsExp with FunctionsExp with Booleans =>
 
+  /*
+  override def indexedSeq_sumIf[T:Manifest](e1: Exp[scala.IndexedSeq[T]], e2: Exp[T => scala.Boolean], size: Exp[scala.Int]): Exp[scala.Int] = (e1, e2, size) match {
+    case (Const(is), Const(f), Const(a)) => {
+      var r: Const[scala.Int] = Const(0)
+      for (i <- 0 until a) {
+        val n = is(i)
+        if (f(n))
+          r = Const(r.x + n.asInstanceOf[scala.Int])
+      }
+      r
+    }    
+    case _ => super.indexedSeq_sumIf(e1, e2, size)
+  }
+   */
 
 }
 
@@ -137,7 +162,8 @@ trait ScalaGenIndexedSeqs extends BaseGenIndexedSeqs with ScalaGenNested {
     case IndexedSeqToSeq(l) => emitValDef(sym, src"$l.toSeq")
      */
     case IndexedSeqNew(xs@_*) => emitValDef(sym, src"IndexedSeq(${(xs map {quote}).mkString(",")})")    
-    case IndexedSeqApply(l, e2) => emitValDef(sym, src"$l($e2)")    
+    case IndexedSeqApply(l, e2) => emitValDef(sym, src"$l($e2)")
+    case IndexedSeqSumIf(l, f) => emitValDef(sym, src"{var r = 0; for (e <-$l) if($f(e)) r += e; r}")
     case _ => super.emitNode(sym, rhs) 
   }
 }

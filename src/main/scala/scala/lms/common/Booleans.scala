@@ -10,7 +10,7 @@ trait BooleanOps[A] {
   
 trait Booleans extends Base {
 
-  type Boolean <: BooleanOps[Boolean]
+  type Boolean <: BooleanOps[Boolean] 
 
   implicit def booleanRep: Rep[Boolean] { type Internal = scala.Boolean }
   implicit def booleanLift: Lift[scala.Boolean,Boolean]
