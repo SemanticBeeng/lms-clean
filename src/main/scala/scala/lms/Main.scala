@@ -21,6 +21,13 @@ trait Prog extends Rich with ArithGraphExp {
     arg.sumIf(_ < 3)
   }
 
+  val is2 = (arg: IndexedSeq[Int]) => {
+    val zero: Int = 0
+    val f = (x1:Int, x2:Int) => if (x2 < 3) x1 + x2 else x1
+    arg.toScalaIndexedSeq(3).foldLeft(zero)(f)
+
+  }
+
   val smallProg = (p:Int) => {
     val x: Int = 4
     val y: Int = 3 + x
@@ -39,8 +46,9 @@ object Main extends App with RichOptImpl with Compile with Prog{
 
   val exec = scala.List(
     //    ("Prog", smallProg, 1)
-    ("Staged execution", is,  scala.IndexedSeq(3,4,5))
-//    ("Staged execution", f, scala.IndexedSeq(3,4,5))
+//    ("Staged execution", is2,  scala.IndexedSeq(3,4,5))
+//    ("Staged execution", is1,  scala.IndexedSeq(3,4,5))      
+    ("Staged execution", f, scala.IndexedSeq(3,4,5))
   )
 
   exec.foreach { case (title, f, arg) => 
