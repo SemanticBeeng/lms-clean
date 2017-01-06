@@ -22,7 +22,7 @@ Hence, in an ideal world, we can achieve **abstraction without regret**, writing
 
 Growing complexity in compiler is not the panacea. In a wide range of programs, compilers are limited by the lack of domain-specific knowledge. Indeed, constraining a program to one specific domain opens the door for a wide range of specific optimizations. Furthermore, code generation by "macro" is a common but rather poor way to enable the full extent of abstraction power brought by code generation.
 
-One solution to both issue could be to extend the compiler for each domain and having a very developped macro system. The other one, is to write specific domain-specific language in a staged environment. To avoid reinventing the wheel, embedded DSL is a nice compromise between specialized and general-purpose languages. It is this embedded DSL staged meta-programming path that is explored with LMS, a Scala library for runtime code generation. In the first part, we will study LMS and its related concepts. Then in the second part, we will cover the new frontend implementation that offers a new user frontend, more convenient for the end-user and with multiple benefits enabled by extended typeclass usage. We also cover a case study of LMS applied to the domain of computation graphs.
+One solution to both issue could be to extend the compiler for each domain and having a very developped macro system. The other one, is to write specific domain-specific language in a staged environment. To avoid reinventing the wheel, embedded DSL is a nice compromise between specialized and general-purpose languages. It is this embedded DSL in staged meta-programming environment that is explored with LMS, a Scala library for runtime code generation. In the first part, we will study LMS and its related concepts. Then in the second part, we will cover the new frontend implementation that offers a new user frontend, more convenient for the end-user and with multiple benefits enabled by extended typeclass usage. We also cover a case study of LMS applied to the domain of computation graphs.
 
 
 
@@ -33,7 +33,7 @@ Lightweight Modular Staging (LMS) is a Scala framework for runtime code generati
 * As a meta-programming framework for writing staging compilers. A staging compiler can generate object programs from user meta-programs written in a subset of Scala with staging annotations enriched with DSL. An example of such meta-programs can be staged interpreters. As we will see later, staged interpreters are compilers themselves.
 * As a Transpiler framework for writing optimised transpilers from programs written in a subset of Scala enriched with DSL. We will see that this case applies when the user programs are intended to use lifted types in lieu of common types. 
 
-By "transpiler", we mean that compared to a compiler, the generated output is a valid source code in a given programming language. It is optimized in the sense that the written transpiler does not only translate code from one language to another but will also be capable to applies some transformation to the internal representation of the user program before generating the output. Among those transformations, we can apply the usual compiler optimisations. We can also apply some more domain-specific transformations if needed. This enable to use Scala as an abstract unified source language to generate programs that use as intermediary step various other languages and target heterogenous hardware. This is the case of the framework Delite, written on top of LMS.
+By "transpiler", we mean that compared to a compiler, the generated output is a valid source code in a given programming language. It is optimized in the sense that the written transpiler does not only translate code from one language to another but will also be capable to applies some transformation to the internal representation of the user program before generating the output. Among those transformations, we can apply the usual compiler optimisations. We can also apply some more domain-specific transformations if needed. This enable to use Scala as an abstract unified source language to generate programs composed of various specialized languages and that target heterogenous hardware. This is the case of the framework Delite, written on top of LMS.
 
 Meta-programming is the art of writing computer programs that can handle other programs as data. Thus, they are able to reason about programs, which they are themselves, hence the name. In staged meta-programming, the goal is to generate new programs from annotated programs. Those annotations are called staged annotations. The program source is called the **meta-program**. The program being generated is the the **object program**. The generation can go through multiple stage. Each stage is another transformation that can leverage new informations to build the next program. LMS is heterogeneous: the meta-program and the object program can be written in different programming languages (e.g: generating C with formal proofs annotations as in lms-verify). 
 
@@ -104,6 +104,11 @@ We will see later what a lifted implementation is but for now let say that any t
 
 ## Staging
 
+Staging is the operation that generates
+object programs (also referred as staged programs) from  meta-programs. For instance, the usual final "pipeline" is to write a meta-program, stage it (this includes a compile-time and a run-time), then compile and run the object program.
+
+Staged annotations are used at staging time to give information about how we intend the object program to be built.
+
 In meta-programming, the staged annotations can usually take multiple forms:
 
 * String (Yes, you read that right, the full program is written as a string!)
@@ -114,7 +119,7 @@ The LMS way is ... neither. It is based on a virtualized extension of Scala, DSL
 
 ### Lifted types
 
-A lifted type represents that same type at the next future stage. For instance, the lifted type of an integer is a declaration that, once staged, this same value will represent an integer. So instead of manipulating an integer directly, you manipulate an "integer once staged".
+A lifted type represent an inner type at the next future stage. For instance, the lifted type of an integer is a declaration that, once staged, this same value will represent an integer. So instead of manipulating an integer directly, you manipulate an "integer once staged".
 
 Below are example of the difference between common types and lifted types. Although similar in form those programs are different in nature:
 
@@ -134,7 +139,7 @@ val b: LiftedInteger
 val c: LiftedInger a + b
 ~~~
 
-Notice that even though we use the same operator +, we necessary have to redefine it for LiftedInteger. But instead of actually summing integers, this new + operator will build the right Internal Representation for this object-program operation. 
+Notice that even though we use the same operator +, we necessary have to redefine it for LiftedInteger. But instead of actually summing integers, this new + operator will build the right Internal Representation (IR) for this object-program operation. 
 
 ### Internal representation and the Exp tree
 
@@ -184,7 +189,7 @@ We will not describe further the IR since this project focus on the frontend. It
 
 ### Lifted types and DSL operations
 
-The previous frontend of LMS was representing lifted types as wrapped in a Rep monad. `LiftedInteger` would be written as`Rep[Int]`. The idea is that if A is the expected type in the object-program then we manipulate its Rep-resentation. This monad was the staging annotation.
+The previous frontend of LMS was representing lifted types as wrapped in a Rep monad. `LiftedInteger` would be written as `Rep[Int]`. The idea is that if A is the expected type in the object-program then we manipulate its Rep-resentation. This monad was the staging annotation.
 
 The way to define operations on DSL was to define operators in scope that would manipulate the given Rep.
 
@@ -250,7 +255,7 @@ LMS enables meta-programming and doesn't necessarily require the use of DSL. Nev
 
 ## Delite
 
-Delite is a research project from Stanford University's Pervasive Parallelism Laboratory (PPL). Delite is built on top of LMS and could be seen as an alternative or supplement of `common/` targeted for high-performance parallel DSL. Furhermore, Delite includes the Delite Execution Graph whose purpose to orchestrate the application written potentially as multiple object programs (e.g one part in CUDA, one part in C and the last part in Scala). Last but not least, the Delite team have created Forge whose purpose is to generate DSL as libraries for LLMS from a unified specification language that avoids any boilerplate.
+Delite is a research project from Stanford University's Pervasive Parallelism Laboratory (PPL). Delite is built on top of LMS and could be seen as an alternative or supplement of `common/` targeted for high-performance parallel DSL. Furhermore, Delite includes the Delite Execution Graph whose purpose to orchestrate the application written potentially as multiple object programs (e.g one part in CUDA, one part in C and the last part in Scala). Last but not least, the Delite team have created Forge whose purpose is to generate DSL as libraries for LMS from a unified specification language that avoids any boilerplate.
 
 ## Users
 
@@ -533,7 +538,7 @@ It is not necessary to lift a function and in most case, a simple inlining of th
 
 # Computation Graph
 
-Computation graphs are directed graph made of nodes that represent a computation. It is an abstract model that can generalize many functions. It is very common in distributed computing and it is how most deep learning (TensorFlow, Deeplearning4j) represents their neural networks models. 
+Computation graphs are directed graphs made of nodes that represent a computation. It is an abstract model that can generalize many functions. It is very common in distributed computing and it is how most deep learning (TensorFlow, Deeplearning4j) represents their neural networks models. 
 
 ![Example of a simple arithmethic computation graph](comp-graph.png){ width="70%" }
 
