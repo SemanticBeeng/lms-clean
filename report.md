@@ -3,7 +3,7 @@ title: Staged meta-programming, new LMS frontend and computation graphs
 author:
 - \large \textbf{Ruben Fiszel} 
 date:  \today 
-abstract: In this report, we explore staged meta-programming, in particular the LMS framework and the development of its new frontend whose aim is to ease the development of staged meta programs and their DSL libraries through, among others, shadowing of types. We also explore the usage of this new frontend for a particular case study\text{:} Staged computation graphs with cycle, dimensions and topology checking at staging time. We observe a signigicant performance improvement at evaluation.
+abstract: In this report, we explore staged meta-programming, in particular the LMS framework and the development of its new frontend whose aim is to ease the development of staged meta programs and their DSL libraries through, among others, shadowing of types. We also explore the usage of this new frontend for a particular case study\text{:} Staged computation graphs with cycle, dimensions and topology checking at staging time. We observe a significant performance improvement at evaluation compared to a non-staged program.
 institute: EPFL
 keywords: LMS staging
 documentclass: report
@@ -331,9 +331,9 @@ The idea behind the new frontend is to use that typeclass pattern as staging ann
 
 ![New LMS Org](new-LMS-org.png)
 
-In the previous LMS, we manipulated lifted types Rep[A] and defined specific functions in scope for that particular Rep[A].
+In the previous LMS, we manipulated lifted types `Rep[A]` and defined specific functions in scope for that particular `Rep[A]`.
 
-In the new LMS, we manipulate dsl.A that have Rep typeclass instances defined in scope.
+In the new LMS, we manipulate `dsl.A` that have Rep typeclass instances defined in scope.
 
 ~~~scala
 
@@ -398,7 +398,7 @@ In the previous LMS, equals could be defined in such way:
 	
 ~~~
 
-The Scala choose the right dispatch based on the most specialized definition of __equal. Note that `def __equal[A, B](a: A, b:B)` is a more general function than all above but only get triggered if none of the above case do not trigger.
+The Scala choose the right dispatch based on the most specialized definition of __equal. Note that `def __equal[A, B](a: A, b:B)` is a more general function than all above but only gets triggered if none of the above case triggers.
 
 Now with the typeclass pattern we could attempt such rewrite:
 
@@ -499,7 +499,7 @@ trait IntsOptImpl extends IntsImpl with EffectExp {
 
 ## Collections
 
-Containers like `List` force us to decide between multiple potential and equally valid choice. The first of them is either their IR is a list of expression or if they are an expression of a list (`Exp[scala.List[A]]` vs `scala.List[Exp[A]]`). We decide for the former as the latter can be manipulated directly as `scala.List[A]` with `A` being a lifted type and do not require a lifted List type.
+Containers like `List` force us to decide between multiple potential and equally valid choice. The first of them is either their IR is a list of expression or if they are an expression of a list (`Exp[scala.List[A]]` vs `scala.List[Exp[A]]`). We decide for the former as the latter can be manipulated directly as `scala.List[A]` with `A` being a lifted type and does not require a lifted List type.
 
 The second issue is the multiplicity of the Lift case. Given that `Lift[B,A]` is in scope:
 
@@ -507,7 +507,7 @@ The second issue is the multiplicity of the Lift case. Given that `Lift[B,A]` is
 * `dsl.List[B]` should be able to lift to `dsl.List[A]`
 * `scala.List[A]` should be able lift to `scala.List[A]` or `dsl.List[A]`
 
-We solve this issue by defining a two lifts instead of one:
+We solve this issue by defining two lifts instead of one:
 
 ~~~scala
   implicit def listLift[U, T](implicit tp: Rep[T], lift: Lift[U, T])
@@ -621,7 +621,7 @@ Below the common forward evaluation of the graph implemented using memoization a
 
 `AddTimeAble[Data]` guarantees that Data has the operations `+` and `*` necessary for derivations.
 
-Here Data can either be either `dsl.Int` for a staged computation graph or else a simple `scala.Int` (or at least a wrapper that implements AddTimeAble)
+Here Data can be either `dsl.Int` for a staged computation graph or else a simple `scala.Int` (or at least a wrapper that implements AddTimeAble)
 
 ## Cycle check
 
@@ -629,11 +629,11 @@ A staged computation graph builds the graph during staging. This means that all 
 
 ## Arithmetic
 
-We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that Int, Double and Float implement it. Those kinds of computation graph are a good sanity check as well as a clear example of the abstraction brought by a computation graph. We will use those arithmetic graphs to do benchmarking of their evaluation time performance as a staged meta-program and as a normal progra. We do not take into account the efficiency of building those graphs and of the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Nodes that represent some fixed weights inside the graph such that some constant folding might happen. Those constant nodes are a decent way to represent fixed weights in a graph.
+We implement a graph with each node being a basic arithmetic operation (+,*,-,%,min,max) and a data type that is upper bounded by a basic arithmetic operation interface such that Int, Double and Float implement it. Those kinds of computation graph are a good sanity check as well as a clear example of the abstraction brought by a computation graph. We will use those arithmetic graphs to do benchmarking of their evaluation time performance as a staged meta-program and as a normal program. We do not take into account the efficiency of building those graphs and of the safety checks (like cycle check) because we want to measure efficiency in a "build once, evaluate often" context. We also add Constant Nodes that represent some fixed weights inside the graph such that some constant folding might happen. Those constant nodes are a decent way to represent fixed weights in a graph.
 
 ### Benchmark
 
-For benchmarking purposes, we will randomly generate 2000 nodes big graph. The graph are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
+For benchmarking purposes, we will randomly generate 2000 nodes big graphs. The graphs are build in a way that they stay balanced: each node is at most input of only 1 more node than any other node. We use Int as the Data type.
 
 We compare the non-staged computation graph to a meta-program that benefits from the optimised implementation of lifted Int. The optimised implementation of lifted Int differs from the non optimised optimisation of lift Int by smart-constructors that can optimize some operations such as multiplications with 0 or 1, or addition with 0 or binary operations on constants (Constant folding). 
 
@@ -665,12 +665,12 @@ LMS is a powerful meta-programming library that unlocks a wide range of possibil
 
 # References {-}
 
-* Tiark's thesis: [Lightweight Modular Staging and Embedded Compilers: Abstraction without Regret for High-Level High-Performance Programming](https://infoscience.epfl.ch/record/180642/files/EPFL_TH5456.pdf)
-* [Calculus on Computational Graphs: Backpropagation](https://colah.github.io/posts/2015-08-Backprop/)
-* [Forge: Generating a High Performance DSL Implementation from a Declarative Specification](http://ppl.stanford.edu/papers/gpce13-sujeeth.pdf) Arvind K. Sujeeth, Austin Gibbons, Kevin J. Brown, HyoukJoong Lee, Tiark Rompf, Martin Odersky, and Kunle Olukotun
-* [Composition and Reuse with Compiled Domain-Specific Languages](http://ppl.stanford.edu/papers/ecoop13_sujeeth.pdf) Arvind K. Sujeeth, Tiark Rompf, Kevin J. Brown, HyoukJoong Lee, Hassan Chafi, Victoria Popic, Michael Wu, Aleksander Prokopec, Vojin Jovanovic, Martin Odersky, and Kunle Olukotun
-* [Optimizing Data Structures in High-Level Programs: New Directions for Extensible Compilers based on Staging](http://ppl.stanford.edu/papers/popl13_rompf.pdf) Tiark Rompf, Arvind K. Sujeeth, Nada Amin, Kevin J. Brown, Vojin Jovanovic, HyoukJoong Lee, Manohar Jonnalagedda, Kunle Olukotun, Martin Odersky
-* [A Heterogeneous Parallel Framework for Domain-Specific Languages](http://ppl.stanford.edu/papers/pact11-brown.pdf) Kevin J. Brown, Arvind K. Sujeeth, HyoukJoong Lee, Tiark Rompf, Hassan Chafi, Martin Odersky, Kunle Olukotun
+* Tiark's thesis: *[Lightweight Modular Staging and Embedded Compilers: Abstraction without Regret for High-Level High-Performance Programming](https://infoscience.epfl.ch/record/180642/files/EPFL_TH5456.pdf)*
+* *[Calculus on Computational Graphs: Backpropagation](https://colah.github.io/posts/2015-08-Backprop/)*
+* *[Forge: Generating a High Performance DSL Implementation from a Declarative Specification](http://ppl.stanford.edu/papers/gpce13-sujeeth.pdf)* Arvind K. Sujeeth, Austin Gibbons, Kevin J. Brown, HyoukJoong Lee, Tiark Rompf, Martin Odersky, and Kunle Olukotun
+* *[Composition and Reuse with Compiled Domain-Specific Languages](http://ppl.stanford.edu/papers/ecoop13_sujeeth.pdf)* Arvind K. Sujeeth, Tiark Rompf, Kevin J. Brown, HyoukJoong Lee, Hassan Chafi, Victoria Popic, Michael Wu, Aleksander Prokopec, Vojin Jovanovic, Martin Odersky, and Kunle Olukotun
+* *[Optimizing Data Structures in High-Level Programs: New Directions for Extensible Compilers based on Staging](http://ppl.stanford.edu/papers/popl13_rompf.pdf)* Tiark Rompf, Arvind K. Sujeeth, Nada Amin, Kevin J. Brown, Vojin Jovanovic, HyoukJoong Lee, Manohar Jonnalagedda, Kunle Olukotun, Martin Odersky
+* *[A Heterogeneous Parallel Framework for Domain-Specific Languages](http://ppl.stanford.edu/papers/pact11-brown.pdf)* Kevin J. Brown, Arvind K. Sujeeth, HyoukJoong Lee, Tiark Rompf, Hassan Chafi, Martin Odersky, Kunle Olukotun
 
 # Acknowledgement {-}
 
