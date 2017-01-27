@@ -540,7 +540,7 @@ It is not necessary to lift a function and in most case, a simple inlining of th
 
 Computation graphs are directed graphs made of nodes that represent a computation. It is an abstract model that can generalize many functions. It is very common in distributed computing and it is how most deep learning (TensorFlow, Deeplearning4j) represents their neural networks models. 
 
-![Example of a simple arithmethic computation graph](comp-graph.png){ width="70%" }
+![Example of a simple arithmethic computation graph [Source](https://colah.github.io/posts/2015-08-Backprop/)](comp-graph.png){ width="70%" }
 
 Each node has 0 or more inputs and 0 or n outputs and 1 operation. Having 0 inputs is the special case of Input nodes and having 0 output is the special case of output nodes. The input nodes form the input layer. The output nodes form the output layer. We will only consider feedforward computation graphs without any cycles. An example of a node can be the Add node. It takes two entry and output their sum.
 
@@ -651,7 +651,7 @@ Average evaluation time:
 
 We also implement backpropagation in both meta-programs and common programs. Backpropagation is an algorithm that enable fast computation of all partial derivatives in a computation graph with respect to the weights or in our case to the input nodes. Our backpropagation algorithm is common for both lifted and non-lifted types thanks to a `AddTimeAble` interface (derivability need at least `+` and `*` to be defined). This shows the flexibility of LMS.
 
-![Example of a simple arithmethic computation graph with backpropagation](tree-backprop.png){ width="70%" }
+![Example of a simple arithmethic computation graph with backpropagation [Source](https://colah.github.io/posts/2015-08-Backprop/)](tree-backprop.png){ width="70%" }
 
 ## Matrix Graphs
 
@@ -663,16 +663,17 @@ Last but not least, we implement computation graphs able to handle Matrix as Dat
 
 LMS is a powerful meta-programming library that unlocks a wide range of possibilities and among them **abstraction without regret**. Our case study of LMS applied to computation graphs is a good showcase of the performance benefits of that approach while keeping a high degree of abstraction. Eventually, meta-programs might shape a large part of high-performance computing. By enhancing the tools and making the syntax seamless to the user, we hope to see the usage of LMS democratize to a wider range of applications.
 
+# Acknowledgement {-}
+
+Thanks to my beloved parents for their continuous support, my awesome supervisor Nada Amin, Prof. Martin Odersky, the LMS master and author Tiark Rompf, and the delite folks Kevin James Brown and David Koeplinger.
+
 # References {-}
 
 * Tiark's thesis: *[Lightweight Modular Staging and Embedded Compilers: Abstraction without Regret for High-Level High-Performance Programming](https://infoscience.epfl.ch/record/180642/files/EPFL_TH5456.pdf)*
-* *[Calculus on Computational Graphs: Backpropagation](https://colah.github.io/posts/2015-08-Backprop/)*
+* [colah]: *[Calculus on Computational Graphs: Backpropagation](https://colah.github.io/posts/2015-08-Backprop/)*
 * *[Forge: Generating a High Performance DSL Implementation from a Declarative Specification](http://ppl.stanford.edu/papers/gpce13-sujeeth.pdf)* Arvind K. Sujeeth, Austin Gibbons, Kevin J. Brown, HyoukJoong Lee, Tiark Rompf, Martin Odersky, and Kunle Olukotun
 * *[Composition and Reuse with Compiled Domain-Specific Languages](http://ppl.stanford.edu/papers/ecoop13_sujeeth.pdf)* Arvind K. Sujeeth, Tiark Rompf, Kevin J. Brown, HyoukJoong Lee, Hassan Chafi, Victoria Popic, Michael Wu, Aleksander Prokopec, Vojin Jovanovic, Martin Odersky, and Kunle Olukotun
 * *[Optimizing Data Structures in High-Level Programs: New Directions for Extensible Compilers based on Staging](http://ppl.stanford.edu/papers/popl13_rompf.pdf)* Tiark Rompf, Arvind K. Sujeeth, Nada Amin, Kevin J. Brown, Vojin Jovanovic, HyoukJoong Lee, Manohar Jonnalagedda, Kunle Olukotun, Martin Odersky
 * *[A Heterogeneous Parallel Framework for Domain-Specific Languages](http://ppl.stanford.edu/papers/pact11-brown.pdf)* Kevin J. Brown, Arvind K. Sujeeth, HyoukJoong Lee, Tiark Rompf, Hassan Chafi, Martin Odersky, Kunle Olukotun
 
-# Acknowledgement {-}
-
-Thanks to my beloved parents for their continuous support, my awesome supervisor Nada Amin, Prof. Martin Odersky, the LMS master and author Tiark Rompf, and the delite folks Kevin James Brown and David Koeplinger.
 
